@@ -58,43 +58,47 @@ app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// app.use(helmet({
+//   contentSecurityPolicy: {
+//     directives: {
+//       defaultSrc: ["'self'"],
+// 
+//       scriptSrc: [
+//         "'self'",
+//         "'unsafe-inline'",
+//         "'unsafe-eval'",
+//         "https://cdn.jsdelivr.net",
+//         "https://cdnjs.cloudflare.com"
+//       ],
+// 
+//       styleSrc: [
+//         "'self'",
+//         "'unsafe-inline'",
+//         "https://fonts.googleapis.com",
+//         "https://cdn.jsdelivr.net"
+//       ],
+// 
+//       fontSrc: [
+//         "'self'",
+//         "https://fonts.gstatic.com",
+//         "https://cdn.jsdelivr.net"
+//       ],
+// 
+//       imgSrc: [
+//         "'self'",
+//         "data:",
+//         "https://res.cloudinary.com"
+//       ],
+// 
+//       connectSrc: ["'self'"]
+//     }
+//   },
+// 
+//   frameguard: { action: 'sameorigin' }
+// }));
+
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
-        "https://cdn.jsdelivr.net",
-        "https://cdnjs.cloudflare.com"
-      ],
-
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "https://fonts.googleapis.com",
-        "https://cdn.jsdelivr.net"
-      ],
-
-      fontSrc: [
-        "'self'",
-        "https://fonts.gstatic.com",
-        "https://cdn.jsdelivr.net"
-      ],
-
-      imgSrc: [
-        "'self'",
-        "data:",
-        "https://res.cloudinary.com"
-      ],
-
-      connectSrc: ["'self'"]
-    }
-  },
-
-  frameguard: { action: 'sameorigin' }
+  contentSecurityPolicy: false
 }));
 
 app.use(morgan(isProd ? 'combined' : 'dev'));
