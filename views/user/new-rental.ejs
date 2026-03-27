@@ -1,210 +1,271 @@
 <% layout('layouts/boilerplate') %>
 <% pageTitle = 'New Rental' %>
 
-<div class="page-header" style="background: var(--maroon); color: white; padding: 2rem 0; margin-bottom: 2rem;">
+<style>
+  :root { --maroon: #7c1c2e; }
+  .item-card-box { 
+    border: 2px solid #eee; 
+    border-radius: 12px; 
+    padding: 1.5rem; 
+    text-align: center; 
+    cursor: pointer; 
+    transition: 0.3s; 
+    background: #fff; 
+    position: relative; 
+  }
+  .item-card-box:hover { border-color: var(--maroon); transform: translateY(-3px); }
+  .item-card-box.active { 
+    border-color: var(--maroon); 
+    background-color: #fdf2f4; 
+    box-shadow: 0 4px 12px rgba(124,28,46,0.1); 
+  }
+  .qty-input-group { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 10px; 
+    margin-top: 15px; 
+  }
+  .summary-card { 
+    background: white; 
+    border-radius: 15px; 
+    border-top: 5px solid var(--maroon); 
+    position: sticky; 
+    top: 20px; 
+  }
+  .btn-maroon { 
+    background-color: var(--maroon); 
+    color: white; 
+    border: none; 
+    font-weight: 600; 
+    padding: 12px;
+  }
+  .btn-maroon:hover { background-color: #5a1421; color: white; }
+  .btn-maroon:disabled { background-color: #ccc; cursor: not-allowed; }
+  .item-icon-circle {
+    width: 50px;
+    height: 50px;
+    background: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+  }
+</style>
+
+<div class="page-header py-4" style="background: var(--maroon); color: white; margin-bottom: 2rem;">
   <div class="container">
     <h1><i class="bi bi-plus-circle me-2"></i>New Rental</h1>
-    <p class="mb-0" style="opacity: 0.8;">Fill out the form below to request a new rental.</p>
+    <p class="mb-0" style="opacity: 0.9;">Select items and set your rental dates below.</p>
   </div>
 </div>
 
 <div class="container py-4">
   <form id="rentalForm" action="/user/rentals" method="POST">
-    <div id="hiddenInputsContainer"></div>
+    <div id="formPayload"></div>
 
     <div class="row g-4">
       <div class="col-lg-8">
         
-        <div class="jm-card mb-4 p-4 shadow-sm" style="background: white; border-radius: 15px;">
+        <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 15px;">
           <h5 class="mb-4" style="color: var(--maroon); font-weight: 700;">
-            <i class="bi bi-1-circle-fill me-2"></i>Step 1 — Select Items
+            <i class="bi bi-1-square-fill me-2"></i>Step 1 — Choose Your Items
           </h5>
           <div class="row g-3">
-            <% items.forEach(function(item) { %>
-              <div class="col-6 col-md-4">
-                <div class="item-card-box" 
-                     id="card-<%= item.name %>" 
-                     onclick="handleItemClick('<%= item.name %>', <%= item.pricePerDay %>, <%= item.availableQuantity %>)">
-                  
-                  <div class="item-icon-wrapper mb-2">
-                    <i class="bi bi-box-seam" style="font-size: 2rem; color: var(--maroon);"></i>
-                  </div>
-                  <div class="fw-bold"><%= item.displayName %></div>
-                  <div class="text-muted small">₱<%= item.pricePerDay %> / day</div>
-                  <div class="stock-badge <%= item.availableQuantity > 0 ? 'text-success' : 'text-danger' %>">
-                    <%= item.availableQuantity %> available
-                  </div>
+            <% if (items && items.length > 0) { %>
+              <% items.forEach(function(item) { %>
+                <div class="col-6 col-md-4">
+                  <div class="item-card-box" id="card-<%= item.name %>" 
+                       onclick="selectItem('<%= item.name %>', '<%= item.displayName %>', <%= item.pricePerDay %>, <%= item.availableQuantity %>)">
+                    
+                    <div class="item-icon-circle">
+                      <i class="bi bi-box-seam" style="font-size: 1.5rem; color: var(--maroon);"></i>
+                    </div>
+                    
+                    <div class="fw-bold"><%= item.displayName %></div>
+                    <div class="text-muted small">₱<%= item.pricePerDay.toLocaleString() %> / day</div>
+                    <div class="text-muted" style="font-size: 11px;">Stock: <%= item.availableQuantity %></div>
 
-                  <div class="qty-control-wrapper mt-2" id="qty-wrapper-<%= item.name %>" style="display:none;" onclick="event.stopPropagation()">
-                    <div class="d-flex align-items-center justify-content-center gap-2">
+                    <div class="qty-input-group" id="qty-box-<%= item.name %>" style="display: none;" onclick="event.stopPropagation()">
                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', -1)">-</button>
-                      <span id="qty-display-<%= item.name %>" class="fw-bold">1</span>
+                      <span id="qty-num-<%= item.name %>" class="fw-bold mx-2">1</span>
                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', 1)">+</button>
                     </div>
                   </div>
                 </div>
+              <% }); %>
+            <% } else { %>
+              <div class="col-12 text-center py-4">
+                <p class="text-muted">No items available at the moment.</p>
               </div>
-            <% }); %>
+            <% } %>
           </div>
         </div>
 
-        <div class="jm-card mb-4 p-4 shadow-sm" style="background: white; border-radius: 15px;">
+        <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 15px;">
           <h5 class="mb-4" style="color: var(--maroon); font-weight: 700;">
-            <i class="bi bi-2-circle-fill me-2"></i>Step 2 — Rental Dates
+            <i class="bi bi-2-square-fill me-2"></i>Step 2 — Rental Duration
           </h5>
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label small fw-bold text-uppercase">Start Date</label>
-              <input type="date" name="rentalStartDate" id="startDate" class="form-control" required onchange="updateSummary()">
+              <label class="form-label fw-bold small">START DATE</label>
+              <input type="date" name="rentalStartDate" id="startDate" class="form-control" required onchange="calcTotal()" min="<%= new Date().toISOString().split('T')[0] %>">
             </div>
             <div class="col-md-6">
-              <label class="form-label small fw-bold text-uppercase">End Date</label>
-              <input type="date" name="rentalEndDate" id="endDate" class="form-control" required onchange="updateSummary()">
+              <label class="form-label fw-bold small">END DATE</label>
+              <input type="date" name="rentalEndDate" id="endDate" class="form-control" required onchange="calcTotal()" min="<%= new Date().toISOString().split('T')[0] %>">
             </div>
           </div>
         </div>
 
-        <div class="jm-card p-4 shadow-sm" style="background: white; border-radius: 15px;">
+        <div class="card border-0 shadow-sm p-4" style="border-radius: 15px;">
           <h5 class="mb-4" style="color: var(--maroon); font-weight: 700;">
-            <i class="bi bi-3-circle-fill me-2"></i>Step 3 — Delivery Address
+            <i class="bi bi-3-square-fill me-2"></i>Step 3 — Delivery Details
           </h5>
-          <textarea name="deliveryAddress" class="form-control" rows="3" placeholder="Enter full delivery address..." required></textarea>
+          <textarea name="deliveryAddress" class="form-control" rows="3" placeholder="Enter your complete delivery address..." required></textarea>
         </div>
       </div>
 
       <div class="col-lg-4">
-        <div class="summary-card p-4 shadow-sm" style="background: white; border-radius: 15px; position: sticky; top: 20px; border-top: 5px solid var(--maroon);">
-          <h5 class="mb-3 fw-bold">Cost Summary</h5>
+        <div class="card shadow-sm summary-card p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
           
-          <div id="summaryList" class="mb-3">
-            <p class="text-muted text-center py-3">No items selected.</p>
+          <div id="summaryList" style="min-height: 60px;">
+            <p class="text-muted text-center small py-3">Please select an item...</p>
           </div>
-
+          
           <hr>
+          
           <div class="d-flex justify-content-between mb-2">
             <span class="text-muted">Duration:</span>
-            <span id="summaryDuration" class="fw-bold">0 day(s)</span>
+            <span id="displayDays" class="fw-bold">0 day(s)</span>
           </div>
+          
           <div class="d-flex justify-content-between mb-4">
             <span class="fs-5 fw-bold">Total:</span>
-            <span id="summaryTotal" class="fs-5 fw-bold text-maroon" style="color: #7c1c2e;">₱0.00</span>
+            <span id="displayTotal" class="fs-5 fw-bold" style="color: var(--maroon);">₱0.00</span>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 py-2 fw-bold" disabled style="background: #7c1c2e; color: white; border: none;">
-            <i class="bi bi-send-fill me-2"></i>Submit Rental Request
+          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 shadow-sm" disabled>
+            Confirm Rental Request
           </button>
           
-          <a href="/user/rentals" class="btn btn-outline-secondary w-100 mt-2 small">Back to My Rentals</a>
+          <a href="/user/rentals" class="btn btn-link w-100 mt-2 text-decoration-none text-muted small">Cancel and Go Back</a>
         </div>
       </div>
     </div>
   </form>
 </div>
 
-<style>
-  :root { --maroon: #7c1c2e; }
-  .item-card-box { border: 2px solid #f0f0f0; border-radius: 12px; padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: 0.2s; background: #fff; }
-  .item-card-box:hover { border-color: var(--maroon); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-  .item-card-box.selected { border-color: var(--maroon); background-color: #fdf2f4; }
-  .stock-badge { font-size: 0.75rem; font-weight: 600; margin-top: 5px; }
-  .btn-maroon:disabled { background: #ccc !important; cursor: not-allowed; }
-</style>
-
 <script>
-  // State management
-  const selectedItems = new Map();
+  // Map to store selected items: { "chair": { displayName, price, qty, max } }
+  let selected = new Map();
 
-  function handleItemClick(name, price, max) {
+  function selectItem(name, displayName, price, max) {
+    if (max <= 0) return; // Ignore if no stock
+
     const card = document.getElementById(`card-${name}`);
-    const qtyWrapper = document.getElementById(`qty-wrapper-${name}`);
+    const qtyBox = document.getElementById(`qty-box-${name}`);
 
-    if (selectedItems.has(name)) {
-      // De-select
-      selectedItems.delete(name);
-      card.classList.remove('selected');
-      qtyWrapper.style.display = 'none';
+    if (selected.has(name)) {
+      selected.delete(name);
+      card.classList.remove('active');
+      qtyBox.style.display = 'none';
     } else {
-      // Select
-      selectedItems.set(name, { price, qty: 1, max });
-      card.classList.add('selected');
-      qtyWrapper.style.display = 'block';
+      selected.set(name, { displayName, price, qty: 1, max });
+      card.classList.add('active');
+      qtyBox.style.display = 'flex';
     }
-    updateSummary();
+    calcTotal();
   }
 
   function updateQty(name, delta) {
-    const item = selectedItems.get(name);
+    let item = selected.get(name);
     if (!item) return;
-
-    const newQty = item.qty + delta;
+    
+    let newQty = item.qty + delta;
     if (newQty >= 1 && newQty <= item.max) {
       item.qty = newQty;
-      document.getElementById(`qty-display-${name}`).innerText = newQty;
-      updateSummary();
+      document.getElementById(`qty-num-${name}`).innerText = newQty;
+      calcTotal();
     }
   }
 
-  function updateSummary() {
-    const listDiv = document.getElementById('summaryList');
-    const totalSpan = document.getElementById('summaryTotal');
-    const durationSpan = document.getElementById('summaryDuration');
-    const submitBtn = document.getElementById('submitBtn');
-
-    // Calculate Days
+  function calcTotal() {
+    const list = document.getElementById('summaryList');
     const start = document.getElementById('startDate').value;
     const end = document.getElementById('endDate').value;
+    
+    // Calculate Days
     let days = 0;
     if (start && end) {
-      const diff = new Date(end) - new Date(start);
-      days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1);
+      const s = new Date(start);
+      const e = new Date(end);
+      if (e >= s) {
+        days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+      }
     }
 
-    // Build Summary HTML
     let html = '';
     let grandTotal = 0;
 
-    selectedItems.forEach((data, name) => {
-      const itemTotal = data.price * data.qty * (days || 1);
-      grandTotal += (data.price * data.qty * (days || 0)); // Only add to total if days > 0
+    selected.forEach((data, name) => {
+      // Calculate subtotal per item
+      let subtotal = data.price * data.qty * (days || 1);
+      
+      // Accumulate grand total (only if dates are valid)
+      if (days > 0) {
+        grandTotal += (data.price * data.qty * days);
+      }
+
       html += `
-        <div class="d-flex justify-content-between small mb-1">
-          <span>${name} x ${data.qty}</span>
-          <span>₱${itemTotal.toLocaleString()}</span>
+        <div class="d-flex justify-content-between mb-2 border-bottom pb-1">
+          <div style="font-size: 0.85rem;">
+            <strong>${data.displayName}</strong><br>
+            <span class="text-muted">${data.qty} unit(s) x ₱${data.price.toLocaleString()}</span>
+          </div>
+          <span class="fw-bold">₱${subtotal.toLocaleString()}</span>
         </div>`;
     });
 
-    listDiv.innerHTML = html || '<p class="text-muted text-center py-3">No items selected.</p>';
-    durationSpan.innerText = `${days} day(s)`;
-    totalSpan.innerText = `₱${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-
-    // Enable button only if conditions are met
-    submitBtn.disabled = !(selectedItems.size > 0 && days > 0);
+    list.innerHTML = html || '<p class="text-muted text-center small py-3">Please select an item...</p>';
+    document.getElementById('displayDays').innerText = `${days} day(s)`;
+    document.getElementById('displayTotal').innerText = `₱${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    
+    // Enable/Disable Submit Button
+    document.getElementById('submitBtn').disabled = !(selected.size > 0 && days > 0);
   }
 
-  // FINAL STEP: Form Submission Payload
+  // INTERCEPT FORM SUBMISSION
   document.getElementById('rentalForm').onsubmit = function(e) {
-    const container = document.getElementById('hiddenInputsContainer');
-    container.innerHTML = ''; // Clear existing
+    if (selected.size === 0) {
+      alert("Please select at least one item before submitting.");
+      return false;
+    }
 
+    const payloadContainer = document.getElementById('formPayload');
+    payloadContainer.innerHTML = ''; // Reset
+    
     let index = 0;
-    selectedItems.forEach((data, name) => {
-      // Item Type Input
-      const inputType = document.createElement('input');
-      inputType.type = 'hidden';
-      inputType.name = `items[${index}][itemType]`;
-      inputType.value = name;
-      container.appendChild(inputType);
+    selected.forEach((data, name) => {
+      // Create hidden input for item name/type
+      const typeInput = document.createElement('input');
+      typeInput.type = 'hidden';
+      typeInput.name = `items[${index}][itemType]`;
+      typeInput.value = name;
+      payloadContainer.appendChild(typeInput);
 
-      // Quantity Input
-      const inputQty = document.createElement('input');
-      inputQty.type = 'hidden';
-      inputQty.name = `items[${index}][quantity]`;
-      inputQty.value = data.qty;
-      container.appendChild(inputQty);
+      // Create hidden input for quantity
+      const qtyInput = document.createElement('input');
+      qtyInput.type = 'hidden';
+      qtyInput.name = `items[${index}][quantity]`;
+      qtyInput.value = data.qty;
+      payloadContainer.appendChild(qtyInput);
 
       index++;
     });
 
-    return true; // Allow form to submit
+    return true; // Proceed to server
   };
 </script>
