@@ -1,182 +1,228 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// index.js  —  J&M Rentals — Main Server (fully wired)
-// ─────────────────────────────────────────────────────────────────────────────
-'use strict';
+const express = require('express');
+const router = express.Router();
+const User = require('../models/user');
+const Rental = require('../models/rental');
+const Item = require('../models/item');
+const Notification = require('../models/notification');
+const { isUser } = require('../middleware/isUser');
+const { isRental, isRentalOwner, isRentalActive } = require('../middleware/isRental');
+const { isValidId } = require('../middleware/isValidId');
+const { uploadProfilePicture } = require('../middleware/isUpload');
+const { createAuditLog } = require('../middleware/isAuditLog');
 
-require('dotenv').config();
+// Middleware to ensure user is logged in
+router.use(isUser);
 
-const requiredEnv = ['MONGO_URI', 'SESSION_SECRET',];
-requiredEnv.forEach((key) => {
-  if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`); process.exit(1); }
-});
+// ── DASHBOARD ──
+router.get('/dashboard', async (req, res) => {
+  try {
+    const userId = req.currentUser._id;
+    const [recentRentals, notifications, allRentals] = await Promise.all([
+      Rental.find({ customer: userId }).sort({ createdAt: -1 }).limit(5).lean(),
+      Notification.find({ recipient: userId }).sort({ createdAt: -1 }).limit(6).lean(),
+      Rental.find({ customer: userId }).lean(),
+    ]);
 
-const express    = require('express');
-const path       = require('path');
-const mongoose   = require('mongoose');
-const ejsMate    = require('ejs-mate');
-const session    = require('express-session');
-const { MongoStore } = require('connect-mongo');
-const flash      = require('connect-flash');
-const helmet     = require('helmet');
-const morgan     = require('morgan');
+    const stats = {
+      total: allRentals.length,
+      pending: allRentals.filter(r => r.status === 'pending').length,
+      active: allRentals.filter(r => ['approved','active'].includes(r.status)).length,
+      totalSpent: allRentals.reduce((sum, r) => sum + (r.totalCost || 0), 0),
+    };
 
-const { attachUser }        = require('./middleware/isUser');
-const { attachUnreadCount } = require('./middleware/isNotification');
-
-const authRoutes         = require('./routes/auth');
-const userRoutes         = require('./routes/user_route');
-const adminRoutes        = require('./routes/admin_route');
-const superAdminRoutes   = require('./routes/superAdmin');
-const notificationRoutes = require('./routes/notification_route');
-// routes/user.js
-const Item = require('./models/item');
-
-
-const app    = express();
-const PORT   = process.env.PORT || 10000;
-const isProd = process.env.NODE_ENV === 'production';
-
-
-app.set('trust proxy', 1); // IMPORTANT for Render HTTPS
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true,      // REQUIRED on Render
-    httpOnly: true
+    res.render('user/dashboard', {
+      pageTitle: 'My Dashboard',
+      recentRentals,
+      notifications,
+      stats,
+    });
+  } catch (err) {
+    console.error('[User Dashboard]', err.message);
+    req.flash('error', 'Could not load dashboard.');
+    res.redirect('/');
   }
-}));
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log('[DB] MongoDB connected successfully'))
-  .catch((err) => { console.error('[DB] Error:', err.message)});
-
-mongoose.connection.on('disconnected', () => console.warn('[DB] MongoDB disconnected'));
-
-app.engine('ejs', ejsMate);
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// app.use(helmet({
-//   contentSecurityPolicy: {
-//     directives: {
-//       defaultSrc: ["'self'"],
-// 
-//       scriptSrc: [
-//         "'self'",
-//         "'unsafe-inline'",
-//         "'unsafe-eval'",
-//         "https://cdn.jsdelivr.net",
-//         "https://cdnjs.cloudflare.com"
-//       ],
-// 
-//       styleSrc: [
-//         "'self'",
-//         "'unsafe-inline'",
-//         "https://fonts.googleapis.com",
-//         "https://cdn.jsdelivr.net"
-//       ],
-// 
-//       fontSrc: [
-//         "'self'",
-//         "https://fonts.gstatic.com",
-//         "https://cdn.jsdelivr.net"
-//       ],
-// 
-//       imgSrc: [
-//         "'self'",
-//         "data:",
-//         "https://res.cloudinary.com"
-//       ],
-// 
-//       connectSrc: ["'self'"]
-//     }
-//   },
-// 
-//   frameguard: { action: 'sameorigin' }
-// }));
-
-app.use(helmet({
-  contentSecurityPolicy: false
-}));
-
-app.use(morgan(isProd ? 'combined' : 'dev'));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use(session({
-  secret:            process.env.SESSION_SECRET,
-  resave:            false,
-  saveUninitialized: false,
-  store: new MongoStore({
-    mongoUrl:       process.env.MONGO_URI,
-    dbName:         'rental26',
-    collectionName: 'sessions',
-    ttl:            60 * 60 * 24 * 7,
-    autoRemove:     'native',
-  }),
-  cookie: { httpOnly: true, secure: isProd, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 },
-  name: 'jmr.sid',
-}));
-
-app.use(flash());
-app.use(attachUser);
-app.use(attachUnreadCount);
-
-app.use((req, res, next) => {
-  res.locals.success     = req.flash('success');
-  res.locals.error       = req.flash('error');
-  res.locals.info        = req.flash('info');
-  res.locals.appName     = 'J&M Rentals';
-  res.locals.currentPath = req.path;
-  next();
 });
 
-// ── ROUTES ────────────────────────────────────────────────────────────────────
-app.use('/auth',          authRoutes);
-app.use('/user',          userRoutes);
-app.use('/admin',         adminRoutes);
-app.use('/superadmin',    superAdminRoutes);
-app.use('/notifications', notificationRoutes);
+// ── VIEW ALL RENTALS ──
+router.get('/rentals', async (req, res) => {
+  try {
+    const { status, page = 1 } = req.query;
+    const limit = 10;
+    const skip = (page - 1) * limit;
 
-app.get('/', (req, res) => {
-  res.render('home/index', { pageTitle: 'Welcome' });
-});
+    const filter = { customer: req.currentUser._id };
+    if (status && status !== 'all') filter.status = status;
 
-// ── 404 ───────────────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).render('error', { statusCode: 404, message: 'Page not found.' });
-});
+    const [rentals, total] = await Promise.all([
+      Rental.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Rental.countDocuments(filter),
+    ]);
 
-// ── Global Error Handler ──────────────────────────────────────────────────────
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.stack || err.message);
-  const statusCode = err.status || err.statusCode || 500;
-  const message    = isProd ? 'Something went wrong.' : err.message || 'Internal Server Error';
-
-  if (err.name === 'ValidationError') {
-    Object.values(err.errors).forEach(e => req.flash('error', e.message));
-    return res.redirect('back');
+    res.render('user/rentals', {
+      pageTitle: 'My Rentals',
+      rentals,
+      currentStatus: status || 'all',
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    req.flash('error', 'Could not load rentals.');
+    res.redirect('/user/dashboard');
   }
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue || {})[0] || 'field';
-    req.flash('error', `That ${field} is already in use.`);
-    return res.redirect('back');
+});
+
+// ── NEW RENTAL FORM ──
+router.get('/rentals/new', async (req, res) => {
+  try {
+    const items = await Item.find({ isAvailable: true }).lean();
+    res.render('user/new-rental', { pageTitle: 'New Rental Request', items });
+  } catch (err) {
+    req.flash('error', 'Could not load rental form.');
+    res.redirect('/user/rentals');
   }
-  res.status(statusCode).render('error', { statusCode, message });
 });
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log('╔══════════════════════════════════════╗');
-  console.log('║       J&M Rentals — Server Up  🎤    ║');
-  console.log(`║   http://localhost:${PORT}              ║`);
-  console.log(`║   ENV: ${(process.env.NODE_ENV || 'development').padEnd(28)}║`);
-  console.log('╚══════════════════════════════════════╝');
-  console.log('');
+// ── POST CREATE RENTAL ──
+router.post('/rentals', async (req, res) => {
+  try {
+    const { rentalStartDate, rentalEndDate, deliveryAddress, notes } = req.body;
+
+    // Correctly handle arrays from checkboxes
+    const rawTypes = [].concat(req.body['itemType[]'] || []);
+    const rawQtys = [].concat(req.body['quantity[]'] || []);
+    const rawPrices = [].concat(req.body['pricePerDay[]'] || []);
+
+    if (rawTypes.length === 0) {
+      req.flash('error', 'Please select at least one item.');
+      return res.redirect('/user/rentals/new');
+    }
+
+    const start = new Date(rentalStartDate);
+    const end = new Date(rentalEndDate);
+    
+    if (isNaN(start) || isNaN(end) || end < start) {
+      req.flash('error', 'Invalid dates. End date must be on or after start date.');
+      return res.redirect('/user/rentals/new');
+    }
+
+    const numberOfDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    let baseCost = 0;
+    const rentalItems = [];
+
+    for (let i = 0; i < rawTypes.length; i++) {
+        const qty = parseInt(rawQtys[i]) || 1;
+        const price = parseFloat(rawPrices[i]) || 0;
+        const subtotal = qty * price * numberOfDays;
+        
+        baseCost += subtotal;
+        
+        // FIX: Using 'item' key to match your Mongoose Schema validation
+        rentalItems.push({
+          item: rawTypes[i], 
+          quantity: qty,
+          pricePerDay: price,
+          subtotal: subtotal
+        });
+    }
+
+    const rental = new Rental({
+      customer: req.currentUser._id,
+      items: rentalItems,
+      rentalStartDate: start,
+      rentalEndDate: end,
+      numberOfDays: numberOfDays,
+      deliveryAddress: deliveryAddress || req.currentUser.location,
+      baseCost: baseCost,
+      totalCost: baseCost,
+      notes: notes || '',
+      status: 'pending',
+      paymentStatus: 'unpaid'
+    });
+
+    await rental.save();
+    
+    // Notifications
+    try {
+        const admins = await User.find({ role: { $in: ['admin','superadmin'] } }).lean();
+        const notifDocs = admins.map(a => ({
+          recipient: a._id,
+          type: 'RENTAL_SUBMITTED',
+          title: 'New Rental Request',
+          message: `${req.currentUser.fullName} submitted a rental request.`,
+          relatedRental: rental._id,
+        }));
+        await Notification.insertMany(notifDocs);
+    } catch (e) { console.log("Notification error ignored"); }
+
+    await createAuditLog(req, {
+      action: 'RENTAL_CREATE',
+      targetCollection: 'Rental',
+      targetId: rental._id,
+      description: `Customer created rental ${rental.referenceNumber}`,
+    });
+
+    req.flash('success', `Rental request submitted successfully!`);
+    res.redirect(`/user/rentals/${rental._id}`);
+
+  } catch (err) {
+    console.error('SERVER ERROR:', err);
+    req.flash('error', err.message); 
+    res.redirect('/user/rentals/new');
+  }
 });
 
-module.exports = app;
+// ── VIEW RENTAL DETAIL ──
+router.get('/rentals/:rentalId', isValidId('rentalId'), isRental, isRentalOwner, (req, res) => {
+  res.render('user/rental-detail', {
+    pageTitle: req.rental.referenceNumber,
+    rental: req.rental,
+  });
+});
+
+// ── EXTEND RENTAL ──
+router.post('/rentals/:rentalId/extend', isValidId('rentalId'), isRental, isRentalOwner, isRentalActive, async (req, res) => {
+  try {
+    const additionalDays = parseInt(req.body.additionalDays) || 1;
+    const additionalCost = additionalDays * 400; 
+
+    req.rental.extensions.push({ additionalDays, additionalCost });
+    req.rental.extensionCost += additionalCost;
+    req.rental.totalCost += additionalCost;
+
+    const newEnd = new Date(req.rental.rentalEndDate);
+    newEnd.setDate(newEnd.getDate() + additionalDays);
+    req.rental.rentalEndDate = newEnd;
+    req.rental.numberOfDays += additionalDays;
+
+    await req.rental.save();
+
+    req.flash('success', `Extension of ${additionalDays} day(s) added.`);
+    res.redirect(`/user/rentals/${req.params.rentalId}`);
+  } catch (err) {
+    req.flash('error', 'Could not process extension.');
+    res.redirect(`/user/rentals/${req.params.rentalId}`);
+  }
+});
+
+// ── PROFILE ──
+router.get('/profile', (req, res) => {
+  res.render('user/profile', { pageTitle: 'My Profile' });
+});
+
+router.post('/profile', uploadProfilePicture, async (req, res) => {
+  try {
+    const { fullName, username, email, phoneNumber, location } = req.body;
+    const updates = { fullName, username: username.toLowerCase(), email: email.toLowerCase(), phoneNumber, location };
+    if (req.file) updates.profilePicture = req.file.path;
+
+    await User.findByIdAndUpdate(req.currentUser._id, updates, { runValidators: true });
+    req.flash('success', 'Profile updated successfully.');
+    res.redirect('/user/profile');
+  } catch (err) {
+    req.flash('error', err.message || 'Could not update profile.');
+    res.redirect('/user/profile');
+  }
+});
+
+module.exports = router;
