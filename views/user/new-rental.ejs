@@ -237,35 +237,39 @@
     document.getElementById('submitBtn').disabled = !(selected.size > 0 && days > 0);
   }
 
-  // INTERCEPT FORM SUBMISSION
-  document.getElementById('rentalForm').onsubmit = function(e) {
+  
+  // INTERCEPT FORM SUBMISSION (NEW FLAT ARRAY VERSION)
+document.getElementById('rentalForm').onsubmit = function(e) {
     if (selected.size === 0) {
-      alert("Please select at least one item before submitting.");
-      return false;
+        alert("Please select at least one item before submitting.");
+        return false;
     }
 
     const payloadContainer = document.getElementById('formPayload');
     payloadContainer.innerHTML = ''; // Reset
     
-    let index = 0;
     selected.forEach((data, name) => {
-      // Create hidden input for item name/type
-      const typeInput = document.createElement('input');
-      typeInput.type = 'hidden';
-      typeInput.name = `items[${index}][itemType]`;
-      typeInput.value = name;
-      payloadContainer.appendChild(typeInput);
+        // 1. Hidden input for Item Name (name="itemType[]")
+        const typeInput = document.createElement('input');
+        typeInput.type = 'hidden';
+        typeInput.name = 'itemType[]'; // FLAT ARRAY
+        typeInput.value = name;
+        payloadContainer.appendChild(typeInput);
 
-      // Create hidden input for quantity
-      const qtyInput = document.createElement('input');
-      qtyInput.type = 'hidden';
-      qtyInput.name = `items[${index}][quantity]`;
-      qtyInput.value = data.qty;
-      payloadContainer.appendChild(qtyInput);
+        // 2. Hidden input for Quantity (name="quantity[]")
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'hidden';
+        qtyInput.name = 'quantity[]'; // FLAT ARRAY
+        qtyInput.value = data.qty;
+        payloadContainer.appendChild(qtyInput);
 
-      index++;
+        // 3. Hidden input for Price (name="pricePerDay[]")
+        const priceInput = document.createElement('input');
+        priceInput.type = 'hidden';
+        priceInput.name = 'pricePerDay[]'; // FLAT ARRAY
+        priceInput.value = data.price;
+        payloadContainer.appendChild(priceInput);
     });
 
     return true; // Proceed to server
-  };
-</script>
+};

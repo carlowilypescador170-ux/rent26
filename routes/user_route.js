@@ -1,6 +1,3 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// routes/user.js — Customer-facing routes (FINAL CLEAN VERSION)
-// ─────────────────────────────────────────────────────────────────────────────
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
@@ -79,7 +76,7 @@ router.get('/rentals/new', async (req, res) => {
     }
 });
 
-// ── POST /user/rentals (THE ONLY RENTAL POST ROUTE) ───────────────────────────
+// ── POST /user/rentals (FIXED FOR VALIDATION ERROR) ───────────────────────────
 router.post('/rentals', async (req, res) => {
     try {
         const { rentalStartDate, rentalEndDate, deliveryAddress, notes } = req.body;
@@ -112,8 +109,9 @@ router.post('/rentals', async (req, res) => {
             const subtotal = qty * price * numberOfDays;
             baseCost += subtotal;
 
+            // FIX: 'item' is the required key in the Schema
             rentalItems.push({
-                item: rawTypes[i], // Matching Database Schema 'item' path
+                item: rawTypes[i], 
                 quantity: qty,
                 pricePerDay: price,
                 subtotal: subtotal
@@ -134,7 +132,7 @@ router.post('/rentals', async (req, res) => {
             paymentStatus: 'unpaid',
         });
 
-        await rental.save();
+        await rental.save(); // Should now pass validation
 
         // Notifications & Audit Log
         try {
@@ -178,7 +176,7 @@ router.get('/rentals/:rentalId', isValidId('rentalId'), isRental, isRentalOwner,
 router.post('/rentals/:rentalId/extend', isValidId('rentalId'), isRental, isRentalOwner, isRentalActive, async (req, res) => {
     try {
         const additionalDays = parseInt(req.body.additionalDays) || 1;
-        const additionalCost = additionalDays * 400; // Fixed extension rate or based on item
+        const additionalCost = additionalDays * 400; 
 
         req.rental.extensions.push({ additionalDays, additionalCost });
         req.rental.extensionCost += additionalCost;
