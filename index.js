@@ -30,7 +30,7 @@ const superAdminRoutes   = require('./routes/superAdmin');
 const notificationRoutes = require('./routes/notification_route');
 
 const app    = express();
-const PORT   = process.env.PORT || 3000;
+const PORT   = process.env.PORT || 10000;
 const isProd = process.env.NODE_ENV === 'production';
 
 mongoose
