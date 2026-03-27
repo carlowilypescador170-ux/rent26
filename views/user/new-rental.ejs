@@ -36,74 +36,65 @@
             <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
               Click an item card to select it, then adjust the quantity.
             </p>
-
             <div class="row g-3">
+  <% if (items.length === 0) { %>
+    <div class="col-12">
+      <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px 0;">
+        <i class="bi bi-exclamation-circle me-1"></i>No items available for rental right now.
+      </p>
+    </div>
+  <% } %>
 
-              <!-- Chair -->
-              <div class="col-6 col-md-3">
-                <div class="item-card" id="card-chair" onclick="toggleItem('chair')" style="cursor:pointer;">
-                  <div class="item-icon"><i class="bi bi-person-workspace"></i></div>
-                  <div class="item-name">Chair</div>
-                  <div class="item-price">₱7 / day</div>
-                </div>
-                <div class="qty-row" id="qty-row-chair" style="display:none;">
-                  <button type="button" class="qty-btn" onclick="changeQty('chair', -1)">−</button>
-                  <span class="qty-val" id="qty-chair">1</span>
-                  <button type="button" class="qty-btn" onclick="changeQty('chair', 1)">+</button>
-                </div>
-                <input type="hidden" name="items[0][itemType]" value="chair"    id="itype-chair" disabled>
-                <input type="hidden" name="items[0][quantity]" value="1"        id="iqty-chair"  disabled>
-              </div>
+  <% const ICONS = { chair:'bi-person-workspace', table:'bi-circle', long_table:'bi-layout-text-window', videoke:'bi-mic' }; %>
 
-              <!-- Round Table -->
-              <div class="col-6 col-md-3">
-                <div class="item-card" id="card-table" onclick="toggleItem('table')" style="cursor:pointer;">
-                  <div class="item-icon"><i class="bi bi-circle"></i></div>
-                  <div class="item-name">Round Table</div>
-                  <div class="item-price">₱50 / day</div>
-                </div>
-                <div class="qty-row" id="qty-row-table" style="display:none;">
-                  <button type="button" class="qty-btn" onclick="changeQty('table', -1)">−</button>
-                  <span class="qty-val" id="qty-table">1</span>
-                  <button type="button" class="qty-btn" onclick="changeQty('table', 1)">+</button>
-                </div>
-                <input type="hidden" name="items[1][itemType]" value="table"    id="itype-table" disabled>
-                <input type="hidden" name="items[1][quantity]" value="1"        id="iqty-table"  disabled>
-              </div>
+  <% items.forEach((item, index) => { %>
+    <div class="col-6 col-md-3">
 
-              <!-- Long Table -->
-              <div class="col-6 col-md-3">
-                <div class="item-card" id="card-long_table" onclick="toggleItem('long_table')" style="cursor:pointer;">
-                  <div class="item-icon"><i class="bi bi-layout-text-window"></i></div>
-                  <div class="item-name">Long Table</div>
-                  <div class="item-price">₱100 / day</div>
-                </div>
-                <div class="qty-row" id="qty-row-long_table" style="display:none;">
-                  <button type="button" class="qty-btn" onclick="changeQty('long_table', -1)">−</button>
-                  <span class="qty-val" id="qty-long_table">1</span>
-                  <button type="button" class="qty-btn" onclick="changeQty('long_table', 1)">+</button>
-                </div>
-                <input type="hidden" name="items[2][itemType]" value="long_table" id="itype-long_table" disabled>
-                <input type="hidden" name="items[2][quantity]" value="1"          id="iqty-long_table"  disabled>
-              </div>
+      <div class="item-card <%= item.availableQuantity === 0 ? 'item-unavailable' : '' %>"
+           id="card-<%= item.name %>"
+           onclick="<%= item.availableQuantity > 0 ? `toggleItem('${item.name}', ${item.pricePerDay}, ${item.availableQuantity})` : '' %>"
+           style="cursor: <%= item.availableQuantity > 0 ? 'pointer' : 'not-allowed' %>;"
+           title="<%= item.availableQuantity === 0 ? 'Out of stock' : '' %>">
 
-              <!-- Videoke -->
-              <div class="col-6 col-md-3">
-                <div class="item-card" id="card-videoke" onclick="toggleItem('videoke')" style="cursor:pointer;">
-                  <div class="item-icon"><i class="bi bi-mic"></i></div>
-                  <div class="item-name">Videoke</div>
-                  <div class="item-price">₱400 / day</div>
-                </div>
-                <div class="qty-row" id="qty-row-videoke" style="display:none;">
-                  <button type="button" class="qty-btn" onclick="changeQty('videoke', -1)">−</button>
-                  <span class="qty-val" id="qty-videoke">1</span>
-                  <button type="button" class="qty-btn" onclick="changeQty('videoke', 1)">+</button>
-                </div>
-                <input type="hidden" name="items[3][itemType]" value="videoke" id="itype-videoke" disabled>
-                <input type="hidden" name="items[3][quantity]" value="1"       id="iqty-videoke"  disabled>
-              </div>
+        <% if (item.images && item.images.length > 0) { %>
+          <div class="item-icon">
+            <img src="<%= item.images[0] %>" alt="<%= item.displayName %>"
+                 style="width:40px;height:40px;object-fit:contain;">
+          </div>
+        <% } else { %>
+          <div class="item-icon">
+            <i class="bi <%= ICONS[item.name] || 'bi-box' %>"></i>
+          </div>
+        <% } %>
 
-            </div>
+        <div class="item-name"><%= item.displayName %></div>
+        <div class="item-price">₱<%= item.pricePerDay.toLocaleString('en-PH') %> / day</div>
+
+        <% if (item.availableQuantity === 0) { %>
+          <div style="font-size:10px;color:#ef4444;font-weight:600;margin-top:4px;">OUT OF STOCK</div>
+        <% } else { %>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">
+            <%= item.availableQuantity %> available
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Qty stepper -->
+      <div class="qty-row" id="qty-row-<%= item.name %>" style="display:none;">
+        <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', -1)">−</button>
+        <span class="qty-val" id="qty-<%= item.name %>">1</span>
+        <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', 1)">+</button>
+      </div>
+
+      <!-- Hidden inputs -->
+      <input type="hidden" name="items[<%= index %>][itemType]"
+             value="<%= item.name %>" id="itype-<%= item.name %>" disabled>
+      <input type="hidden" name="items[<%= index %>][quantity]"
+             value="1" id="iqty-<%= item.name %>"  disabled>
+
+    </div>
+  <% }) %>
+</div>
           </div>
         </div>
 
@@ -232,6 +223,12 @@
     color: var(--maroon, #7c1c2e);
     margin-bottom: 6px;
   }
+  .item-card.item-unavailable {
+  opacity: 0.45;
+  filter: grayscale(60%);
+  border-color: #d1d5db;
+  pointer-events: none;
+}
   .item-name  { font-size: 13px; font-weight: 700; color: #1f2937; }
   .item-price { font-size: 11px; color: var(--text-muted, #6b7280); margin-top: 2px; }
 
@@ -271,18 +268,28 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-  const PRICES = { chair: 7, table: 50, long_table: 100, videoke: 400 };
-  const NAMES  = { chair: 'Chair', table: 'Round Table', long_table: 'Long Table', videoke: 'Videoke' };
-  const INDICES = { chair: 0, table: 1, long_table: 2, videoke: 3 };
+  // Built from DB via EJS — never hardcoded
+  const PRICES = {};
+  const NAMES  = {};
+  const MAX_QTY = {};
 
-  const selected = new Set();
+  <% items.forEach(item => { %>
+    PRICES['<%= item.name %>']   = <%= item.pricePerDay %>;
+    NAMES['<%= item.name %>']    = '<%= item.displayName %>';
+    MAX_QTY['<%= item.name %>']  = <%= item.availableQuantity %>;
+  <% }) %>
+
+  // Map: itemName → pricePerDay
+  const selected = new Map();
 
   /* ── Toggle item selection ── */
-  window.toggleItem = function (type) {
-    const card   = document.getElementById('card-' + type);
+  window.toggleItem = function (type, price, maxQty) {
+    if (maxQty < 1) return; // guard: out of stock
+
+    const card   = document.getElementById('card-'    + type);
     const qtyRow = document.getElementById('qty-row-' + type);
-    const itype  = document.getElementById('itype-' + type);
-    const iqty   = document.getElementById('iqty-'  + type);
+    const itype  = document.getElementById('itype-'   + type);
+    const iqty   = document.getElementById('iqty-'    + type);
 
     if (selected.has(type)) {
       selected.delete(type);
@@ -290,28 +297,30 @@ document.addEventListener('DOMContentLoaded', function () {
       qtyRow.style.display = 'none';
       itype.disabled = true;
       iqty.disabled  = true;
+      // reset qty display to 1
+      document.getElementById('qty-' + type).textContent = '1';
+      iqty.value = '1';
     } else {
-      selected.add(type);
+      selected.set(type, price);
       card.classList.add('selected');
       qtyRow.style.display = 'flex';
       itype.disabled = false;
       iqty.disabled  = false;
     }
-
     computeCost();
   };
 
-  /* ── Change quantity ── */
+  /* ── Change quantity (capped at availableQuantity) ── */
   window.changeQty = function (type, delta) {
     const display   = document.getElementById('qty-'  + type);
     const hiddenQty = document.getElementById('iqty-' + type);
 
     let val = parseInt(display.textContent) + delta;
     if (val < 1) val = 1;
+    if (val > MAX_QTY[type]) val = MAX_QTY[type]; // cap at stock
 
     display.textContent = val;
     hiddenQty.value     = val;
-
     computeCost();
   };
 
@@ -322,26 +331,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let days = 0;
     if (startVal && endVal) {
-      const start = new Date(startVal);
-      const end   = new Date(endVal);
-      if (end >= start) {
-        days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      }
+      const s = new Date(startVal), e = new Date(endVal);
+      if (e >= s) days = Math.ceil((e - s) / 86400000) + 1;
     }
 
-    let baseCost  = 0;
-    let itemLines = '';
+    let baseCost = 0, itemLines = '';
 
-    selected.forEach(type => {
-      const qty   = parseInt(document.getElementById('qty-' + type).textContent);
-      const price = PRICES[type];
-      const sub   = qty * price * days;
-      baseCost   += sub;
-
+    selected.forEach((price, type) => {
+      const qty = parseInt(document.getElementById('qty-' + type).textContent);
+      const sub = qty * price * days;
+      baseCost += sub;
       itemLines += `
         <div class="cost-row">
-          <span>${qty}× ${NAMES[type]} @ ₱${price}/day × ${days}d</span>
-          <span class="font-mono">₱${sub.toLocaleString('en-PH',{minimumFractionDigits:2})}</span>
+          <span>${qty}× ${NAMES[type]} @ ₱${price.toLocaleString('en-PH')}/day × ${days}d</span>
+          <span class="font-mono">₱${sub.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
         </div>`;
     });
 
@@ -350,43 +353,37 @@ document.addEventListener('DOMContentLoaded', function () {
       '<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0;">No items selected.</p>';
 
     document.getElementById('summaryDays').textContent  = days + ' day(s)';
-    document.getElementById('summaryBase').textContent  = '₱' + baseCost.toLocaleString('en-PH',{minimumFractionDigits:2});
-    document.getElementById('summaryTotal').textContent = '₱' + baseCost.toLocaleString('en-PH',{minimumFractionDigits:2});
+    document.getElementById('summaryBase').textContent  = '₱' + baseCost.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    document.getElementById('summaryTotal').textContent = '₱' + baseCost.toLocaleString('en-PH', { minimumFractionDigits: 2 });
 
     document.getElementById('submitBtn').disabled = !(selected.size > 0 && days > 0);
   }
 
-  /* ── Date change listeners ── */
+  /* ── Date listeners ── */
   document.getElementById('startDate').addEventListener('change', function () {
-    // ensure endDate can't be before startDate
     const endInput = document.getElementById('endDate');
-    if (endInput.value && endInput.value < this.value) {
-      endInput.value = this.value;
-    }
+    if (endInput.value && endInput.value < this.value) endInput.value = this.value;
     endInput.min = this.value;
     computeCost();
   });
 
   document.getElementById('endDate').addEventListener('change', computeCost);
 
-  /* ── On submit: enable only selected items so they post correctly ── */
+  /* ── On submit: re-enable hidden inputs for selected items ── */
   document.getElementById('rentalForm').addEventListener('submit', function (e) {
-    const allTypes = ['chair', 'table', 'long_table', 'videoke'];
-
-    allTypes.forEach(type => {
+    // Disable all first, then re-enable only selected
+    ['chair', 'table', 'long_table', 'videoke'].forEach(type => {
       const itype = document.getElementById('itype-' + type);
       const iqty  = document.getElementById('iqty-'  + type);
-
-      if (selected.has(type)) {
-        itype.disabled = false;
-        iqty.disabled  = false;
-      } else {
-        itype.disabled = true;
-        iqty.disabled  = true;
-      }
+      if (itype) itype.disabled = true;
+      if (iqty)  iqty.disabled  = true;
     });
 
-    // basic validation guard
+    selected.forEach((_, type) => {
+      document.getElementById('itype-' + type).disabled = false;
+      document.getElementById('iqty-'  + type).disabled = false;
+    });
+
     if (selected.size === 0) {
       e.preventDefault();
       alert('Please select at least one item.');

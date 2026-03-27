@@ -28,7 +28,18 @@ const userRoutes         = require('./routes/user_route');
 const adminRoutes        = require('./routes/admin_route');
 const superAdminRoutes   = require('./routes/superAdmin');
 const notificationRoutes = require('./routes/notification_route');
+// routes/user.js
+const Item = require('../models/item');
 
+router.get('/rentals/new', isLoggedIn, async (req, res) => {
+  try {
+    const items = await Item.find({ isAvailable: true }).sort({ pricePerDay: 1 });
+    res.render('rentals/new', { items });
+  } catch (err) {
+    req.flash('error', 'Could not load items.');
+    res.redirect('/user/rentals');
+  }
+});
 const app    = express();
 const PORT   = process.env.PORT || 10000;
 const isProd = process.env.NODE_ENV === 'production';
