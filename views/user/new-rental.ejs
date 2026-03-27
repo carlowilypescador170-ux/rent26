@@ -47,16 +47,30 @@
                 </div>
               <% } %>
 
-              <% const ICONS = { chair:'bi-person-workspace', table:'bi-circle', long_table:'bi-layout-text-window', videoke:'bi-mic' }; %>
+              <%
+                const ICONS = {
+                  chair:      'bi-person-workspace',
+                  table:      'bi-circle',
+                  long_table: 'bi-layout-text-window',
+                  videoke:    'bi-mic'
+                };
+              %>
 
-              <% items.forEach((item, index) => { %>
+              <% items.forEach(function(item, index) { %>
                 <div class="col-6 col-md-3">
 
-                  <div class="item-card <%= item.availableQuantity === 0 ? 'item-unavailable' : '' %>"
-                       id="card-<%= item.name %>"
-                       onclick="<%= item.availableQuantity > 0 ? `toggleItem('${item.name}', ${item.pricePerDay}, ${item.availableQuantity})` : '' %>"
-                       style="cursor: <%= item.availableQuantity > 0 ? 'pointer' : 'not-allowed' %>;"
-                       title="<%= item.availableQuantity === 0 ? 'Out of stock' : '' %>">
+                  <!-- ✅ onclick uses plain string concat, no backticks inside EJS -->
+                  <% if (item.availableQuantity > 0) { %>
+                    <div class="item-card"
+                         id="card-<%= item.name %>"
+                         onclick="toggleItem('<%= item.name %>', <%= item.pricePerDay %>, <%= item.availableQuantity %>)"
+                         style="cursor:pointer;">
+                  <% } else { %>
+                    <div class="item-card item-unavailable"
+                         id="card-<%= item.name %>"
+                         style="cursor:not-allowed;"
+                         title="Out of stock">
+                  <% } %>
 
                     <% if (item.images && item.images.length > 0) { %>
                       <div class="item-icon">
@@ -73,31 +87,37 @@
                     <div class="item-price">₱<%= item.pricePerDay.toLocaleString('en-PH') %> / day</div>
 
                     <% if (item.availableQuantity === 0) { %>
-                      <div style="font-size:10px;color:#ef4444;font-weight:600;margin-top:4px;">OUT OF STOCK</div>
+                      <div class="item-stock out">
+                        <i class="bi bi-x-circle me-1"></i>Out of Stock
+                      </div>
                     <% } else { %>
-                      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">
-                        <%= item.availableQuantity %> available
+                      <div class="item-stock">
+                        <i class="bi bi-box me-1"></i><%= item.availableQuantity %> available
                       </div>
                     <% } %>
-                  </div>
 
-                  <!-- Qty stepper -->
+                  </div><!-- /item-card -->
+
+                  <!-- Qty stepper (shown after selecting) -->
                   <div class="qty-row" id="qty-row-<%= item.name %>" style="display:none;">
                     <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', -1)">−</button>
                     <span class="qty-val" id="qty-<%= item.name %>">1</span>
                     <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', 1)">+</button>
                   </div>
+                  <div class="qty-label" id="qty-label-<%= item.name %>" style="display:none;">
+                    of <%= item.availableQuantity %> available
+                  </div>
 
-                  <!-- Hidden inputs -->
+                  <!-- Hidden POST inputs (disabled until selected) -->
                   <input type="hidden" name="items[<%= index %>][itemType]"
                          value="<%= item.name %>" id="itype-<%= item.name %>" disabled>
                   <input type="hidden" name="items[<%= index %>][quantity]"
                          value="1" id="iqty-<%= item.name %>" disabled>
 
                 </div>
-              <% }) %>
+              <% }); %>
 
-            </div>
+            </div><!-- /row g-3 -->
           </div>
         </div>
 
@@ -204,7 +224,7 @@
   .item-card {
     border: 2px solid var(--border, #e5e7eb);
     border-radius: 12px;
-    padding: 16px 8px;
+    padding: 16px 8px 12px;
     text-align: center;
     transition: all .2s ease;
     background: #fff;
@@ -235,6 +255,24 @@
   .item-name  { font-size: 13px; font-weight: 700; color: #1f2937; }
   .item-price { font-size: 11px; color: var(--text-muted, #6b7280); margin-top: 2px; }
 
+  /* Stock badge on card */
+  .item-stock {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #16a34a;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 20px;
+    padding: 2px 8px;
+  }
+  .item-stock.out {
+    color: #ef4444;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
   .qty-row {
     display: flex;
     align-items: center;
@@ -255,7 +293,15 @@
     transition: background .15s, color .15s;
   }
   .qty-btn:hover { background: var(--maroon, #7c1c2e); color: #fff; }
-  .qty-val  { font-size: 15px; font-weight: 700; min-width: 24px; text-align: center; }
+  .qty-val { font-size: 15px; font-weight: 700; min-width: 24px; text-align: center; }
+
+  /* "of N available" label under stepper */
+  .qty-label {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted, #6b7280);
+    margin-top: 3px;
+  }
 
   .cost-row {
     display: flex;
@@ -271,55 +317,59 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-  // Built from DB via EJS — never hardcoded
+  // Populated from DB via EJS — zero hardcoded values
   const PRICES  = {};
   const NAMES   = {};
   const MAX_QTY = {};
 
-  <% items.forEach(item => { %>
+  <% items.forEach(function(item) { %>
     PRICES['<%= item.name %>']  = <%= item.pricePerDay %>;
     NAMES['<%= item.name %>']   = '<%= item.displayName %>';
     MAX_QTY['<%= item.name %>'] = <%= item.availableQuantity %>;
-  <% }) %>
+  <% }); %>
 
-  // Map: itemName → pricePerDay
-  const selected = new Map();
+  const selected = new Map(); // itemName → pricePerDay
 
   /* ── Toggle item selection ── */
   window.toggleItem = function (type, price, maxQty) {
     if (maxQty < 1) return;
 
-    const card   = document.getElementById('card-'    + type);
-    const qtyRow = document.getElementById('qty-row-' + type);
-    const itype  = document.getElementById('itype-'   + type);
-    const iqty   = document.getElementById('iqty-'    + type);
+    const card     = document.getElementById('card-'      + type);
+    const qtyRow   = document.getElementById('qty-row-'   + type);
+    const qtyLabel = document.getElementById('qty-label-' + type);
+    const itype    = document.getElementById('itype-'     + type);
+    const iqty     = document.getElementById('iqty-'      + type);
 
     if (selected.has(type)) {
+      // Deselect
       selected.delete(type);
       card.classList.remove('selected');
-      qtyRow.style.display = 'none';
+      qtyRow.style.display   = 'none';
+      qtyLabel.style.display = 'none';
       itype.disabled = true;
       iqty.disabled  = true;
       document.getElementById('qty-' + type).textContent = '1';
       iqty.value = '1';
     } else {
+      // Select
       selected.set(type, price);
       card.classList.add('selected');
-      qtyRow.style.display = 'flex';
+      qtyRow.style.display   = 'flex';
+      qtyLabel.style.display = 'block';
       itype.disabled = false;
       iqty.disabled  = false;
     }
     computeCost();
   };
 
-  /* ── Change quantity (capped at availableQuantity) ── */
+  /* ── Stepper: change quantity, capped at stock ── */
   window.changeQty = function (type, delta) {
     const display   = document.getElementById('qty-'  + type);
     const hiddenQty = document.getElementById('iqty-' + type);
 
     let val = parseInt(display.textContent) + delta;
-    if (val < 1) val = 1;
-    if (val > MAX_QTY[type]) val = MAX_QTY[type];
+    if (val < 1)              val = 1;
+    if (val > MAX_QTY[type])  val = MAX_QTY[type];
 
     display.textContent = val;
     hiddenQty.value     = val;
@@ -339,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let baseCost = 0, itemLines = '';
 
-    selected.forEach((price, type) => {
+    selected.forEach(function (price, type) {
       const qty = parseInt(document.getElementById('qty-' + type).textContent);
       const sub = qty * price * days;
       baseCost += sub;
@@ -368,22 +418,19 @@ document.addEventListener('DOMContentLoaded', function () {
     endInput.min = this.value;
     computeCost();
   });
-
   document.getElementById('endDate').addEventListener('change', computeCost);
 
-  /* ── On submit: re-enable hidden inputs for selected items only ── */
+  /* ── Submit: disable all, re-enable only selected ── */
   document.getElementById('rentalForm').addEventListener('submit', function (e) {
 
-    // ✅ Disable ALL item inputs first using dynamic key list
-    Object.keys(PRICES).forEach(type => {
+    Object.keys(PRICES).forEach(function (type) {
       const itype = document.getElementById('itype-' + type);
       const iqty  = document.getElementById('iqty-'  + type);
       if (itype) itype.disabled = true;
       if (iqty)  iqty.disabled  = true;
     });
 
-    // ✅ Re-enable only selected items so they POST correctly
-    selected.forEach((_, type) => {
+    selected.forEach(function (_, type) {
       document.getElementById('itype-' + type).disabled = false;
       document.getElementById('iqty-'  + type).disabled = false;
     });
