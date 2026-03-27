@@ -32,7 +32,7 @@ const notificationRoutes = require('./routes/notification_route');
 const app    = express();
 const PORT   = process.env.PORT || 10000;
 const isProd = process.env.NODE_ENV === 'production';
-const session = require('express-session');
+
 
 app.set('trust proxy', 1); // IMPORTANT for Render HTTPS
 app.use(session({
