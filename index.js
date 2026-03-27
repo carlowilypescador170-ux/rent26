@@ -62,15 +62,39 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-      styleSrc:   ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
-      // 👇 Added 'cdn.jsdelivr.net' right here so Bootstrap Icons can load
-      fontSrc:    ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net'],
-      imgSrc:     ["'self'", 'data:', 'res.cloudinary.com'],
-      connectSrc: ["'self'"],
-    },
+
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://cdn.jsdelivr.net",
+        "https://cdnjs.cloudflare.com"
+      ],
+
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://cdn.jsdelivr.net"
+      ],
+
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://cdn.jsdelivr.net"
+      ],
+
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://res.cloudinary.com"
+      ],
+
+      connectSrc: ["'self'"]
+    }
   },
-  frameguard: { action: 'sameorigin' },
+
+  frameguard: { action: 'sameorigin' }
 }));
 
 app.use(morgan(isProd ? 'combined' : 'dev'));
