@@ -36,65 +36,68 @@
             <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
               Click an item card to select it, then adjust the quantity.
             </p>
+
             <div class="row g-3">
-  <% if (items.length === 0) { %>
-    <div class="col-12">
-      <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px 0;">
-        <i class="bi bi-exclamation-circle me-1"></i>No items available for rental right now.
-      </p>
-    </div>
-  <% } %>
 
-  <% const ICONS = { chair:'bi-person-workspace', table:'bi-circle', long_table:'bi-layout-text-window', videoke:'bi-mic' }; %>
+              <% if (items.length === 0) { %>
+                <div class="col-12">
+                  <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px 0;">
+                    <i class="bi bi-exclamation-circle me-1"></i>No items available for rental right now.
+                  </p>
+                </div>
+              <% } %>
 
-  <% items.forEach((item, index) => { %>
-    <div class="col-6 col-md-3">
+              <% const ICONS = { chair:'bi-person-workspace', table:'bi-circle', long_table:'bi-layout-text-window', videoke:'bi-mic' }; %>
 
-      <div class="item-card <%= item.availableQuantity === 0 ? 'item-unavailable' : '' %>"
-           id="card-<%= item.name %>"
-           onclick="<%= item.availableQuantity > 0 ? `toggleItem('${item.name}', ${item.pricePerDay}, ${item.availableQuantity})` : '' %>"
-           style="cursor: <%= item.availableQuantity > 0 ? 'pointer' : 'not-allowed' %>;"
-           title="<%= item.availableQuantity === 0 ? 'Out of stock' : '' %>">
+              <% items.forEach((item, index) => { %>
+                <div class="col-6 col-md-3">
 
-        <% if (item.images && item.images.length > 0) { %>
-          <div class="item-icon">
-            <img src="<%= item.images[0] %>" alt="<%= item.displayName %>"
-                 style="width:40px;height:40px;object-fit:contain;">
-          </div>
-        <% } else { %>
-          <div class="item-icon">
-            <i class="bi <%= ICONS[item.name] || 'bi-box' %>"></i>
-          </div>
-        <% } %>
+                  <div class="item-card <%= item.availableQuantity === 0 ? 'item-unavailable' : '' %>"
+                       id="card-<%= item.name %>"
+                       onclick="<%= item.availableQuantity > 0 ? `toggleItem('${item.name}', ${item.pricePerDay}, ${item.availableQuantity})` : '' %>"
+                       style="cursor: <%= item.availableQuantity > 0 ? 'pointer' : 'not-allowed' %>;"
+                       title="<%= item.availableQuantity === 0 ? 'Out of stock' : '' %>">
 
-        <div class="item-name"><%= item.displayName %></div>
-        <div class="item-price">₱<%= item.pricePerDay.toLocaleString('en-PH') %> / day</div>
+                    <% if (item.images && item.images.length > 0) { %>
+                      <div class="item-icon">
+                        <img src="<%= item.images[0] %>" alt="<%= item.displayName %>"
+                             style="width:40px;height:40px;object-fit:contain;">
+                      </div>
+                    <% } else { %>
+                      <div class="item-icon">
+                        <i class="bi <%= ICONS[item.name] || 'bi-box' %>"></i>
+                      </div>
+                    <% } %>
 
-        <% if (item.availableQuantity === 0) { %>
-          <div style="font-size:10px;color:#ef4444;font-weight:600;margin-top:4px;">OUT OF STOCK</div>
-        <% } else { %>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">
-            <%= item.availableQuantity %> available
-          </div>
-        <% } %>
-      </div>
+                    <div class="item-name"><%= item.displayName %></div>
+                    <div class="item-price">₱<%= item.pricePerDay.toLocaleString('en-PH') %> / day</div>
 
-      <!-- Qty stepper -->
-      <div class="qty-row" id="qty-row-<%= item.name %>" style="display:none;">
-        <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', -1)">−</button>
-        <span class="qty-val" id="qty-<%= item.name %>">1</span>
-        <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', 1)">+</button>
-      </div>
+                    <% if (item.availableQuantity === 0) { %>
+                      <div style="font-size:10px;color:#ef4444;font-weight:600;margin-top:4px;">OUT OF STOCK</div>
+                    <% } else { %>
+                      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">
+                        <%= item.availableQuantity %> available
+                      </div>
+                    <% } %>
+                  </div>
 
-      <!-- Hidden inputs -->
-      <input type="hidden" name="items[<%= index %>][itemType]"
-             value="<%= item.name %>" id="itype-<%= item.name %>" disabled>
-      <input type="hidden" name="items[<%= index %>][quantity]"
-             value="1" id="iqty-<%= item.name %>"  disabled>
+                  <!-- Qty stepper -->
+                  <div class="qty-row" id="qty-row-<%= item.name %>" style="display:none;">
+                    <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', -1)">−</button>
+                    <span class="qty-val" id="qty-<%= item.name %>">1</span>
+                    <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', 1)">+</button>
+                  </div>
 
-    </div>
-  <% }) %>
-</div>
+                  <!-- Hidden inputs -->
+                  <input type="hidden" name="items[<%= index %>][itemType]"
+                         value="<%= item.name %>" id="itype-<%= item.name %>" disabled>
+                  <input type="hidden" name="items[<%= index %>][quantity]"
+                         value="1" id="iqty-<%= item.name %>" disabled>
+
+                </div>
+              <% }) %>
+
+            </div>
           </div>
         </div>
 
@@ -181,7 +184,7 @@
               </span>
             </div>
 
-            <button type="submit" id="submitBtn" class="btn btn-maroon w-100" >
+            <button type="submit" id="submitBtn" class="btn btn-maroon w-100" disabled>
               <i class="bi bi-send me-2"></i>Submit Rental Request
             </button>
             <a href="/user/rentals" class="btn btn-outline-maroon w-100 mt-2" style="font-size:13px;">
@@ -218,17 +221,17 @@
     background: var(--maroon-pale, #fdf2f4);
     box-shadow: 0 0 0 3px rgba(124,28,46,.15);
   }
+  .item-card.item-unavailable {
+    opacity: 0.45;
+    filter: grayscale(60%);
+    border-color: #d1d5db;
+    pointer-events: none;
+  }
   .item-icon {
     font-size: 28px;
     color: var(--maroon, #7c1c2e);
     margin-bottom: 6px;
   }
-  .item-card.item-unavailable {
-  opacity: 0.45;
-  filter: grayscale(60%);
-  border-color: #d1d5db;
-  pointer-events: none;
-}
   .item-name  { font-size: 13px; font-weight: 700; color: #1f2937; }
   .item-price { font-size: 11px; color: var(--text-muted, #6b7280); margin-top: 2px; }
 
@@ -269,14 +272,14 @@
 document.addEventListener('DOMContentLoaded', function () {
 
   // Built from DB via EJS — never hardcoded
-  const PRICES = {};
-  const NAMES  = {};
+  const PRICES  = {};
+  const NAMES   = {};
   const MAX_QTY = {};
 
   <% items.forEach(item => { %>
-    PRICES['<%= item.name %>']   = <%= item.pricePerDay %>;
-    NAMES['<%= item.name %>']    = '<%= item.displayName %>';
-    MAX_QTY['<%= item.name %>']  = <%= item.availableQuantity %>;
+    PRICES['<%= item.name %>']  = <%= item.pricePerDay %>;
+    NAMES['<%= item.name %>']   = '<%= item.displayName %>';
+    MAX_QTY['<%= item.name %>'] = <%= item.availableQuantity %>;
   <% }) %>
 
   // Map: itemName → pricePerDay
@@ -284,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ── Toggle item selection ── */
   window.toggleItem = function (type, price, maxQty) {
-    if (maxQty < 1) return; // guard: out of stock
+    if (maxQty < 1) return;
 
     const card   = document.getElementById('card-'    + type);
     const qtyRow = document.getElementById('qty-row-' + type);
@@ -297,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function () {
       qtyRow.style.display = 'none';
       itype.disabled = true;
       iqty.disabled  = true;
-      // reset qty display to 1
       document.getElementById('qty-' + type).textContent = '1';
       iqty.value = '1';
     } else {
@@ -317,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let val = parseInt(display.textContent) + delta;
     if (val < 1) val = 1;
-    if (val > MAX_QTY[type]) val = MAX_QTY[type]; // cap at stock
+    if (val > MAX_QTY[type]) val = MAX_QTY[type];
 
     display.textContent = val;
     hiddenQty.value     = val;
@@ -369,16 +371,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById('endDate').addEventListener('change', computeCost);
 
-  /* ── On submit: re-enable hidden inputs for selected items ── */
+  /* ── On submit: re-enable hidden inputs for selected items only ── */
   document.getElementById('rentalForm').addEventListener('submit', function (e) {
-    // Disable all first, then re-enable only selected
-    ['chair', 'table', 'long_table', 'videoke'].forEach(type => {
+
+    // ✅ Disable ALL item inputs first using dynamic key list
+    Object.keys(PRICES).forEach(type => {
       const itype = document.getElementById('itype-' + type);
       const iqty  = document.getElementById('iqty-'  + type);
       if (itype) itype.disabled = true;
       if (iqty)  iqty.disabled  = true;
     });
 
+    // ✅ Re-enable only selected items so they POST correctly
     selected.forEach((_, type) => {
       document.getElementById('itype-' + type).disabled = false;
       document.getElementById('iqty-'  + type).disabled = false;
