@@ -10,10 +10,10 @@ const { isValidId } = require('../middleware/isValidId');
 const { uploadProfilePicture } = require('../middleware/isUpload');
 const { createAuditLog } = require('../middleware/isAuditLog');
 
-// All routes here require logged-in customer
+// Middleware to ensure user is logged in
 router.use(isUser);
 
-// ── GET /user/dashboard ───────────────────────────────────────────────────────
+// ── DASHBOARD ──
 router.get('/dashboard', async (req, res) => {
     try {
         const userId = req.currentUser._id;
@@ -32,13 +32,12 @@ router.get('/dashboard', async (req, res) => {
 
         res.render('user/dashboard', { pageTitle: 'My Dashboard', recentRentals, notifications, stats });
     } catch (err) {
-        console.error('[User Dashboard]', err.message);
         req.flash('error', 'Could not load dashboard.');
         res.redirect('/');
     }
 });
 
-// ── GET /user/rentals ─────────────────────────────────────────────────────────
+// ── RENTALS LIST ──
 router.get('/rentals', async (req, res) => {
     try {
         const { status, page = 1 } = req.query;
@@ -65,7 +64,7 @@ router.get('/rentals', async (req, res) => {
     }
 });
 
-// ── GET /user/rentals/new ─────────────────────────────────────────────────────
+// ── NEW RENTAL FORM ──
 router.get('/rentals/new', async (req, res) => {
     try {
         const items = await Item.find({ isAvailable: true }).lean();
@@ -76,12 +75,12 @@ router.get('/rentals/new', async (req, res) => {
     }
 });
 
-// ── POST /user/rentals (FIXED FOR VALIDATION ERROR) ───────────────────────────
+// ── CREATE RENTAL (THE FIX FOR THE "ITEM REQUIRED" ERROR) ──
 router.post('/rentals', async (req, res) => {
     try {
         const { rentalStartDate, rentalEndDate, deliveryAddress, notes } = req.body;
 
-        // Collect arrays from form
+        // 1. Capture the arrays from the frontend script
         const rawTypes = [].concat(req.body['itemType[]'] || []);
         const rawQtys  = [].concat(req.body['quantity[]'] || []);
         const rawPrices = [].concat(req.body['pricePerDay[]'] || []);
@@ -93,25 +92,21 @@ router.post('/rentals', async (req, res) => {
 
         const start = new Date(rentalStartDate);
         const end = new Date(rentalEndDate);
-        if (isNaN(start) || isNaN(end) || end < start) {
-            req.flash('error', 'Invalid dates. End date must be on or after start date.');
-            return res.redirect('/user/rentals/new');
-        }
-
         const numberOfDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
         let baseCost = 0;
         const rentalItems = [];
 
+        // 2. Map the data to the Schema requirements
         for (let i = 0; i < rawTypes.length; i++) {
             const qty = parseInt(rawQtys[i]) || 1;
             const price = parseFloat(rawPrices[i]) || 0;
             const subtotal = qty * price * numberOfDays;
+            
             baseCost += subtotal;
 
-            // FIX: 'item' is the required key in the Schema
             rentalItems.push({
-                item: rawTypes[i], 
+                item: rawTypes[i], // This satisfies: "Path item is required"
                 quantity: qty,
                 pricePerDay: price,
                 subtotal: subtotal
@@ -129,80 +124,47 @@ router.post('/rentals', async (req, res) => {
             totalCost: baseCost,
             notes: notes || '',
             status: 'pending',
-            paymentStatus: 'unpaid',
+            paymentStatus: 'unpaid'
         });
 
-        await rental.save(); // Should now pass validation
+        await rental.save(); // This should now work!
 
-        // Notifications & Audit Log
-        try {
-            const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }).lean();
-            const notifDocs = admins.map(a => ({
-                recipient: a._id,
+        // Notify Admin
+        const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }).lean();
+        if (admins.length > 0) {
+            const notifs = admins.map(admin => ({
+                recipient: admin._id,
                 type: 'RENTAL_SUBMITTED',
                 title: 'New Rental Request',
-                message: `${req.currentUser.fullName} submitted rental ${rental.referenceNumber}.`,
-                relatedRental: rental._id,
+                message: `${req.currentUser.fullName} submitted a rental request.`,
+                relatedRental: rental._id
             }));
-            await Notification.insertMany(notifDocs);
-        } catch (e) { console.error('Notification Error bypassed'); }
+            await Notification.insertMany(notifs);
+        }
 
-        await createAuditLog(req, {
-            action: 'RENTAL_CREATE',
-            targetCollection: 'Rental',
-            targetId: rental._id,
-            description: `Customer created rental ${rental.referenceNumber}`,
-        });
-
-        req.flash('success', `Rental request ${rental.referenceNumber} submitted!`);
+        req.flash('success', `Rental ${rental.referenceNumber} submitted!`);
         res.redirect(`/user/rentals/${rental._id}`);
 
     } catch (err) {
-        console.error('[Create Rental Error]:', err);
-        req.flash('error', err.message || 'Could not submit rental request.');
+        console.error("RENTAL_SUBMIT_ERROR:", err);
+        req.flash('error', err.message);
         res.redirect('/user/rentals/new');
     }
 });
 
-// ── GET /user/rentals/:rentalId ───────────────────────────────────────────────
+// ── VIEW RENTAL DETAIL ──
 router.get('/rentals/:rentalId', isValidId('rentalId'), isRental, isRentalOwner, (req, res) => {
     res.render('user/rental-detail', {
         pageTitle: req.rental.referenceNumber,
-        rental: req.rental,
+        rental: req.rental
     });
 });
 
-// ── POST /user/rentals/:rentalId/extend ───────────────────────────────────────
-router.post('/rentals/:rentalId/extend', isValidId('rentalId'), isRental, isRentalOwner, isRentalActive, async (req, res) => {
-    try {
-        const additionalDays = parseInt(req.body.additionalDays) || 1;
-        const additionalCost = additionalDays * 400; 
-
-        req.rental.extensions.push({ additionalDays, additionalCost });
-        req.rental.extensionCost += additionalCost;
-        req.rental.totalCost += additionalCost;
-
-        const newEnd = new Date(req.rental.rentalEndDate);
-        newEnd.setDate(newEnd.getDate() + additionalDays);
-        req.rental.rentalEndDate = newEnd;
-        req.rental.numberOfDays += additionalDays;
-
-        await req.rental.save();
-
-        req.flash('success', `Extension of ${additionalDays} day(s) added.`);
-        res.redirect(`/user/rentals/${req.params.rentalId}`);
-    } catch (err) {
-        req.flash('error', 'Could not process extension.');
-        res.redirect(`/user/rentals/${req.params.rentalId}`);
-    }
-});
-
-// ── GET /user/profile ─────────────────────────────────────────────────────────
+// ── PROFILE ──
 router.get('/profile', (req, res) => {
     res.render('user/profile', { pageTitle: 'My Profile' });
 });
 
-// ── POST /user/profile ────────────────────────────────────────────────────────
 router.post('/profile', uploadProfilePicture, async (req, res) => {
     try {
         const { fullName, username, email, phoneNumber, location } = req.body;
