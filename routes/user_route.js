@@ -52,7 +52,15 @@ router.get('/dashboard', async (req, res) => {
     res.redirect('/');
   }
 });
-
+router.get('/new', async (req, res) => {
+  try {
+    const items = await Item.find({ isAvailable: true }).sort({ pricePerDay: 1 });
+    res.render('rentals/new', { items });
+  } catch (err) {
+    req.flash('error', 'Could not load items.');
+    res.redirect('/user/rentals');
+  }
+});
 // ── GET /user/rentals ─────────────────────────────────────────────────────────
 router.get('/rentals', async (req, res) => {
   try {
