@@ -103,70 +103,88 @@ router.get('/rentals/new', async (req, res) => {
 // ── POST /user/rentals ────────────────────────────────────────────────────────
 router.post('/rentals', async (req, res) => {
   try {
-    const { rentalStartDate, rentalEndDate, deliveryAddress, notes } = req.body;
+    const { rentalStartDate, rentalEndDate, deliveryAddress, notes, items } = req.body;
 
-    // Collect item arrays from form
-    const itemTypes   = [].concat(req.body['itemType[]']   || []);
-    const quantities  = [].concat(req.body['quantity[]']   || []);
-    const prices      = [].concat(req.body['pricePerDay[]']|| []);
-
-    if (!itemTypes.length) {
+    // 1. Check kung may laman ang items array
+    if (!items || !Array.isArray(items) || items.length === 0) {
       req.flash('error', 'Please select at least one item.');
       return res.redirect('/user/rentals/new');
     }
 
-    const start = new Date(rentalStartDate);
-    const end   = new Date(rentalEndDate);
+    // 2. Linisin ang items (tanggalin ang mga null o walang itemType)
+    const validItems = items.filter(i => i.itemType && i.quantity);
 
-    if (isNaN(start) || isNaN(end) || end <= start) {
-      req.flash('error', 'Invalid dates. End date must be after start date.');
+    if (validItems.length === 0) {
+      req.flash('error', 'Please select at least one valid item.');
       return res.redirect('/user/rentals/new');
     }
 
-    const numberOfDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    // 3. Date Validation
+    const start = new Date(rentalStartDate);
+    const end = new Date(rentalEndDate);
 
-    // Build items array + compute base cost
+    if (isNaN(start) || isNaN(end) || end < start) {
+      req.flash('error', 'Invalid dates. End date must be on or after start date.');
+      return res.redirect('/user/rentals/new');
+    }
+
+    // Calculate days (at least 1 day)
+    const diffTime = Math.abs(end - start);
+    const numberOfDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    // 4. Build rental items and compute cost
     let baseCost = 0;
-    const rentalItems = itemTypes.map((type, i) => {
-      const qty      = parseInt(quantities[i]) || 1;
-      const price    = parseFloat(prices[i]) || 0;
-      const subtotal = qty * price * numberOfDays;
-      baseCost += subtotal;
-      return { itemType: type, quantity: qty, pricePerDay: price, subtotal };
-    });
+    const rentalItems = [];
 
+    for (const item of validItems) {
+      // Hanapin ang price sa database para safe (huwag magtiwala sa price galing sa form)
+      const dbItem = await Item.findOne({ name: item.itemType });
+      const price = dbItem ? dbItem.pricePerDay : 0;
+      const qty = parseInt(item.quantity) || 1;
+      const subtotal = qty * price * numberOfDays;
+      
+      baseCost += subtotal;
+      rentalItems.push({
+        itemType: item.itemType,
+        quantity: qty,
+        pricePerDay: price,
+        subtotal: subtotal
+      });
+    }
+
+    // 5. Create Rental Object
     const rental = new Rental({
-      customer:        req.currentUser._id,
-      items:           rentalItems,
+      customer: req.currentUser._id,
+      items: rentalItems,
       rentalStartDate: start,
-      rentalEndDate:   end,
+      rentalEndDate: end,
       numberOfDays,
       deliveryAddress: deliveryAddress || req.currentUser.location,
       baseCost,
-      extensionCost:   0,
-      totalCost:       baseCost,
-      notes:           notes || '',
-      status:          'pending',
-      paymentStatus:   'unpaid',
+      extensionCost: 0,
+      totalCost: baseCost,
+      notes: notes || '',
+      status: 'pending',
+      paymentStatus: 'unpaid',
     });
 
     await rental.save();
 
-    // Notify admins
-    const admins = await User.find({ role: { $in: ['admin','superadmin'] } }).lean();
+    // 6. Notifications & Audit Logs
+    const admins = await User.find({ role: { $in: ['admin', 'superadmin'] } }).lean();
     const notifDocs = admins.map(a => ({
-      recipient:    a._id,
-      type:         'RENTAL_SUBMITTED',
-      title:        'New Rental Request',
-      message:      `${req.currentUser.fullName} submitted rental ${rental.referenceNumber}.`,
+      recipient: a._id,
+      type: 'RENTAL_SUBMITTED',
+      title: 'New Rental Request',
+      message: `${req.currentUser.fullName} submitted rental ${rental.referenceNumber}.`,
       relatedRental: rental._id,
     }));
     await Notification.insertMany(notifDocs);
 
     await createAuditLog(req, {
-      action:      'RENTAL_CREATE',
+      action: 'RENTAL_CREATE',
       targetCollection: 'Rental',
-      targetId:    rental._id,
+      targetId: rental._id,
       description: `Customer created rental ${rental.referenceNumber}`,
     });
 
@@ -174,12 +192,11 @@ router.post('/rentals', async (req, res) => {
     res.redirect(`/user/rentals/${rental._id}`);
 
   } catch (err) {
-    console.error('[Create Rental]', err.message);
+    console.error('[Create Rental Error]:', err);
     req.flash('error', err.message || 'Could not submit rental request.');
     res.redirect('/user/rentals/new');
   }
 });
-
 // ── GET /user/rentals/:rentalId ───────────────────────────────────────────────
 router.get('/rentals/:rentalId', isValidId('rentalId'), isRental, isRentalOwner, (req, res) => {
   res.render('user/rental-detail', {
