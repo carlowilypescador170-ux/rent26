@@ -1,158 +1,100 @@
 <% layout('layouts/boilerplate') %>
 <% pageTitle = 'New Rental' %>
 
-<div class="page-header">
+<div class="page-header" style="background: var(--maroon); color: white; padding: 2rem 0; margin-bottom: 2rem;">
   <div class="container">
-    <div class="d-flex align-items-center justify-content-between">
-      <div>
-        <h1><i class="bi bi-plus-circle me-2" style="font-size:28px;"></i>New Rental</h1>
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,0.6);">Home</a></li>
-            <li class="breadcrumb-item"><a href="/user/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
-            <li class="breadcrumb-item"><a href="/user/rentals" style="color:rgba(255,255,255,0.6);">My Rentals</a></li>
-            <li class="breadcrumb-item active">New Rental</li>
-          </ol>
-        </nav>
-      </div>
-    </div>
+    <h1><i class="bi bi-plus-circle me-2"></i>New Rental</h1>
+    <p class="mb-0" style="opacity: 0.8;">Fill out the form below to request a new rental.</p>
   </div>
 </div>
 
 <div class="container py-4">
   <form id="rentalForm" action="/user/rentals" method="POST">
+    <div id="hiddenInputsContainer"></div>
+
     <div class="row g-4">
       <div class="col-lg-8">
-        <div class="jm-card mb-4">
-          <div class="jm-card-body">
-            <h5 class="font-display mb-3" style="color:var(--maroon);">
-              <i class="bi bi-box-seam me-2"></i>Step 1 — Select Items
-            </h5>
-            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
-              Click an item card to select it, then adjust the quantity.
-            </p>
+        
+        <div class="jm-card mb-4 p-4 shadow-sm" style="background: white; border-radius: 15px;">
+          <h5 class="mb-4" style="color: var(--maroon); font-weight: 700;">
+            <i class="bi bi-1-circle-fill me-2"></i>Step 1 — Select Items
+          </h5>
+          <div class="row g-3">
+            <% items.forEach(function(item) { %>
+              <div class="col-6 col-md-4">
+                <div class="item-card-box" 
+                     id="card-<%= item.name %>" 
+                     onclick="handleItemClick('<%= item.name %>', <%= item.pricePerDay %>, <%= item.availableQuantity %>)">
+                  
+                  <div class="item-icon-wrapper mb-2">
+                    <i class="bi bi-box-seam" style="font-size: 2rem; color: var(--maroon);"></i>
+                  </div>
+                  <div class="fw-bold"><%= item.displayName %></div>
+                  <div class="text-muted small">₱<%= item.pricePerDay %> / day</div>
+                  <div class="stock-badge <%= item.availableQuantity > 0 ? 'text-success' : 'text-danger' %>">
+                    <%= item.availableQuantity %> available
+                  </div>
 
-            <div class="row g-3" id="itemsGrid">
-              <% if (items.length === 0) { %>
-                <div class="col-12">
-                  <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px 0;">
-                    <i class="bi bi-exclamation-circle me-1"></i>No items available for rental right now.
-                  </p>
-                </div>
-              <% } %>
-
-              <% 
-                var ICONS = { chair: 'bi-person-workspace', table: 'bi-circle', long_table: 'bi-layout-text-window', videoke: 'bi-mic' };
-              %>
-
-              <% items.forEach(function(item, index) { %>
-                <div class="col-6 col-md-3">
-                  <div class="item-card <%= item.availableQuantity === 0 ? 'item-unavailable' : '' %>"
-                       id="card-<%= item.name %>"
-                       data-item-type="<%= item.name %>"
-                       data-price="<%= item.pricePerDay %>"
-                       data-max-qty="<%= item.availableQuantity %>"
-                       style="cursor:<%= item.availableQuantity > 0 ? 'pointer' : 'not-allowed' %>;">
-                    
-                    <div class="item-icon">
-                      <% if (item.images && item.images.length > 0) { %>
-                        <img src="<%= item.images[0] %>" alt="<%= item.displayName %>" style="width:40px;height:40px;object-fit:contain;">
-                      <% } else { %>
-                        <i class="bi <%= ICONS[item.name] || 'bi-box' %>"></i>
-                      <% } %>
-                    </div>
-
-                    <div class="item-name"><%= item.displayName %></div>
-                    <div class="item-price">₱<%= item.pricePerDay.toLocaleString('en-PH') %> / day</div>
-                    
-                    <div class="item-stock <%= item.availableQuantity === 0 ? 'out' : '' %>">
-                      <i class="bi <%= item.availableQuantity === 0 ? 'bi-x-circle' : 'bi-box' %> me-1"></i>
-                      <%= item.availableQuantity === 0 ? 'Out of Stock' : item.availableQuantity + ' available' %>
+                  <div class="qty-control-wrapper mt-2" id="qty-wrapper-<%= item.name %>" style="display:none;" onclick="event.stopPropagation()">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', -1)">-</button>
+                      <span id="qty-display-<%= item.name %>" class="fw-bold">1</span>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', 1)">+</button>
                     </div>
                   </div>
-
-                  <div class="qty-row" id="qty-row-<%= item.name %>" style="display:none;">
-                    <button type="button" class="qty-btn" data-item-type="<%= item.name %>" data-delta="-1">−</button>
-                    <span class="qty-val" id="qty-<%= item.name %>">1</span>
-                    <button type="button" class="qty-btn" data-item-type="<%= item.name %>" data-delta="1">+</button>
-                  </div>
-                  <div class="qty-label" id="qty-label-<%= item.name %>" style="display:none;">
-                    of <%= item.availableQuantity %> available
-                  </div>
-
-                  <input type="hidden" class="item-type-input" value="<%= item.name %>" id="itype-<%= item.name %>" disabled>
-                  <input type="hidden" class="item-qty-input" value="1" id="iqty-<%= item.name %>" disabled>
                 </div>
-              <% }); %>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+
+        <div class="jm-card mb-4 p-4 shadow-sm" style="background: white; border-radius: 15px;">
+          <h5 class="mb-4" style="color: var(--maroon); font-weight: 700;">
+            <i class="bi bi-2-circle-fill me-2"></i>Step 2 — Rental Dates
+          </h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-uppercase">Start Date</label>
+              <input type="date" name="rentalStartDate" id="startDate" class="form-control" required onchange="updateSummary()">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-uppercase">End Date</label>
+              <input type="date" name="rentalEndDate" id="endDate" class="form-control" required onchange="updateSummary()">
             </div>
           </div>
         </div>
 
-        <div class="jm-card mb-4">
-          <div class="jm-card-body">
-            <h5 class="font-display mb-3" style="color:var(--maroon);">
-              <i class="bi bi-calendar3 me-2"></i>Step 2 — Rental Dates
-            </h5>
-            <div class="row g-3">
-              <div class="col-sm-6">
-                <label class="form-label" style="font-size:13px;font-weight:600;">Start Date</label>
-                <input type="date" class="form-control" id="startDate" name="rentalStartDate" required min="<%= new Date().toISOString().split('T')[0] %>">
-              </div>
-              <div class="col-sm-6">
-                <label class="form-label" style="font-size:13px;font-weight:600;">End Date</label>
-                <input type="date" class="form-control" id="endDate" name="rentalEndDate" required min="<%= new Date().toISOString().split('T')[0] %>">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="jm-card mb-4">
-          <div class="jm-card-body">
-            <h5 class="font-display mb-3" style="color:var(--maroon);">
-              <i class="bi bi-geo-alt me-2"></i>Step 3 — Delivery Address
-            </h5>
-            <textarea class="form-control" id="deliveryAddress" name="deliveryAddress" rows="3" placeholder="Enter your full delivery address..." required style="font-size:13px;resize:vertical;"></textarea>
-          </div>
-        </div>
-
-        <div class="jm-card">
-          <div class="jm-card-body">
-            <h5 class="font-display mb-3" style="color:var(--maroon);">
-              <i class="bi bi-chat-left-text me-2"></i>Step 4 — Additional Notes <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(optional)</span>
-            </h5>
-            <textarea class="form-control" name="notes" rows="2" placeholder="Any special instructions or requests..." style="font-size:13px;resize:vertical;"></textarea>
-          </div>
+        <div class="jm-card p-4 shadow-sm" style="background: white; border-radius: 15px;">
+          <h5 class="mb-4" style="color: var(--maroon); font-weight: 700;">
+            <i class="bi bi-3-circle-fill me-2"></i>Step 3 — Delivery Address
+          </h5>
+          <textarea name="deliveryAddress" class="form-control" rows="3" placeholder="Enter full delivery address..." required></textarea>
         </div>
       </div>
 
       <div class="col-lg-4">
-        <div class="jm-card" style="position:sticky;top:16px;">
-          <div class="jm-card-body">
-            <h5 class="font-display mb-3" style="color:var(--maroon);"><i class="bi bi-receipt me-2"></i>Cost Summary</h5>
-            <div id="summaryItems">
-              <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0;">No items selected.</p>
-            </div>
-            <hr style="border-color:var(--border);">
-            <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
-              <span style="color:var(--text-muted);">Duration</span>
-              <span id="summaryDays" style="font-weight:600;">0 day(s)</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
-              <span style="color:var(--text-muted);">Subtotal</span>
-              <span id="summaryBase" class="font-mono">₱0.00</span>
-            </div>
-            <hr style="border-color:var(--border);">
-            <div class="d-flex justify-content-between mb-3">
-              <span style="font-weight:700;font-size:15px;">Total</span>
-              <span id="summaryTotal" class="font-mono" style="font-family:'Playfair Display',serif;font-size:20px;color:var(--maroon);font-weight:700;">₱0.00</span>
-            </div>
-            <button type="submit" id="submitBtn" class="btn btn-maroon w-100" disabled>
-              <i class="bi bi-send me-2"></i>Submit Rental Request
-            </button>
-            <a href="/user/rentals" class="btn btn-outline-maroon w-100 mt-2" style="font-size:13px;">
-              <i class="bi bi-arrow-left me-1"></i>Back to My Rentals
-            </a>
+        <div class="summary-card p-4 shadow-sm" style="background: white; border-radius: 15px; position: sticky; top: 20px; border-top: 5px solid var(--maroon);">
+          <h5 class="mb-3 fw-bold">Cost Summary</h5>
+          
+          <div id="summaryList" class="mb-3">
+            <p class="text-muted text-center py-3">No items selected.</p>
           </div>
+
+          <hr>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Duration:</span>
+            <span id="summaryDuration" class="fw-bold">0 day(s)</span>
+          </div>
+          <div class="d-flex justify-content-between mb-4">
+            <span class="fs-5 fw-bold">Total:</span>
+            <span id="summaryTotal" class="fs-5 fw-bold text-maroon" style="color: #7c1c2e;">₱0.00</span>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 py-2 fw-bold" disabled style="background: #7c1c2e; color: white; border: none;">
+            <i class="bi bi-send-fill me-2"></i>Submit Rental Request
+          </button>
+          
+          <a href="/user/rentals" class="btn btn-outline-secondary w-100 mt-2 small">Back to My Rentals</a>
         </div>
       </div>
     </div>
@@ -160,157 +102,109 @@
 </div>
 
 <style>
-  .item-card { border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px 8px 12px; text-align: center; transition: all .2s ease; background: #fff; user-select: none; }
-  .item-card:hover { border-color: #7c1c2e; background: #fdf2f4; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(124,28,46,.12); }
-  .item-card.selected { border-color: #7c1c2e; background: #fdf2f4; box-shadow: 0 0 0 3px rgba(124,28,46,.15); }
-  .item-card.item-unavailable { opacity: 0.45; filter: grayscale(60%); border-color: #d1d5db; pointer-events: none; }
-  .item-icon { font-size: 28px; color: #7c1c2e; margin-bottom: 6px; }
-  .item-name { font-size: 13px; font-weight: 700; color: #1f2937; }
-  .item-price { font-size: 11px; color: #6b7280; margin-top: 2px; }
-  .item-stock { display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 600; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px; padding: 2px 8px; }
-  .item-stock.out { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
-  .qty-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
-  .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #7c1c2e; background: transparent; color: #7c1c2e; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .qty-btn:hover { background: #7c1c2e; color: #fff; }
-  .qty-val { font-size: 15px; font-weight: 700; min-width: 24px; text-align: center; }
-  .qty-label { text-align: center; font-size: 10px; color: #6b7280; margin-top: 3px; }
-  .cost-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #374151; }
-  .font-mono { font-family: 'Courier New', monospace; }
-  .btn-maroon { background-color: #7c1c2e; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; }
-  .btn-maroon:hover { background-color: #5a1421; color: white; }
-  .btn-maroon:disabled { background-color: #d1d5db; cursor: not-allowed; }
-  .btn-outline-maroon { border: 1px solid #7c1c2e; color: #7c1c2e; background: transparent; padding: 10px; border-radius: 8px; }
+  :root { --maroon: #7c1c2e; }
+  .item-card-box { border: 2px solid #f0f0f0; border-radius: 12px; padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: 0.2s; background: #fff; }
+  .item-card-box:hover { border-color: var(--maroon); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+  .item-card-box.selected { border-color: var(--maroon); background-color: #fdf2f4; }
+  .stock-badge { font-size: 0.75rem; font-weight: 600; margin-top: 5px; }
+  .btn-maroon:disabled { background: #ccc !important; cursor: not-allowed; }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var PRICES = {};
-  var NAMES = {};
-  var MAX_QTY = {};
+  // State management
+  const selectedItems = new Map();
 
-  // Initialize data from EJS
-  <% items.forEach(function(item) { %>
-    PRICES['<%= item.name %>'] = <%= item.pricePerDay %>;
-    NAMES['<%= item.name %>'] = '<%= item.displayName %>';
-    MAX_QTY['<%= item.name %>'] = <%= item.availableQuantity %>;
-  <% }); %>
+  function handleItemClick(name, price, max) {
+    const card = document.getElementById(`card-${name}`);
+    const qtyWrapper = document.getElementById(`qty-wrapper-${name}`);
 
-  var selected = new Map();
-
-  // Item Card Click logic
-  document.getElementById('itemsGrid').addEventListener('click', function (e) {
-    var card = e.target.closest('.item-card');
-    if (!card || card.classList.contains('item-unavailable')) return;
-    
-    var type = card.getAttribute('data-item-type');
-    var price = parseFloat(card.getAttribute('data-price'));
-    var maxQty = parseInt(card.getAttribute('data-max-qty'));
-    
-    toggleItem(type, price, maxQty);
-  });
-
-  // Stepper buttons logic
-  document.getElementById('itemsGrid').addEventListener('click', function (e) {
-    var btn = e.target.closest('.qty-btn');
-    if (!btn) return;
-    var type = btn.getAttribute('data-item-type');
-    var delta = parseInt(btn.getAttribute('data-delta'));
-    changeQty(type, delta);
-  });
-
-  function toggleItem(type, price, maxQty) {
-    if (maxQty < 1) return;
-    var card = document.getElementById('card-' + type);
-    var qtyRow = document.getElementById('qty-row-' + type);
-    var qtyLabel = document.getElementById('qty-label-' + type);
-    var itype = document.getElementById('itype-' + type);
-    var iqty = document.getElementById('iqty-' + type);
-
-    if (selected.has(type)) {
-      selected.delete(type);
+    if (selectedItems.has(name)) {
+      // De-select
+      selectedItems.delete(name);
       card.classList.remove('selected');
-      qtyRow.style.display = 'none';
-      qtyLabel.style.display = 'none';
-      itype.disabled = true;
-      iqty.disabled = true;
+      qtyWrapper.style.display = 'none';
     } else {
-      selected.set(type, price);
+      // Select
+      selectedItems.set(name, { price, qty: 1, max });
       card.classList.add('selected');
-      qtyRow.style.display = 'flex';
-      qtyLabel.style.display = 'block';
-      itype.disabled = false;
-      iqty.disabled = false;
+      qtyWrapper.style.display = 'block';
     }
-    computeCost();
+    updateSummary();
   }
 
-  function changeQty(type, delta) {
-    var display = document.getElementById('qty-' + type);
-    var hiddenQty = document.getElementById('iqty-' + type);
-    var val = parseInt(display.textContent) + delta;
-    if (val < 1) val = 1;
-    if (val > MAX_QTY[type]) val = MAX_QTY[type];
-    display.textContent = val;
-    hiddenQty.value = val;
-    computeCost();
+  function updateQty(name, delta) {
+    const item = selectedItems.get(name);
+    if (!item) return;
+
+    const newQty = item.qty + delta;
+    if (newQty >= 1 && newQty <= item.max) {
+      item.qty = newQty;
+      document.getElementById(`qty-display-${name}`).innerText = newQty;
+      updateSummary();
+    }
   }
 
-  function computeCost() {
-    var startVal = document.getElementById('startDate').value;
-    var endVal = document.getElementById('endDate').value;
-    var days = 0;
-    
-    if (startVal && endVal) {
-      var s = new Date(startVal), e = new Date(endVal);
-      if (e >= s) days = Math.ceil((e - s) / 86400000) + 1;
+  function updateSummary() {
+    const listDiv = document.getElementById('summaryList');
+    const totalSpan = document.getElementById('summaryTotal');
+    const durationSpan = document.getElementById('summaryDuration');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Calculate Days
+    const start = document.getElementById('startDate').value;
+    const end = document.getElementById('endDate').value;
+    let days = 0;
+    if (start && end) {
+      const diff = new Date(end) - new Date(start);
+      days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1);
     }
 
-    var totalCost = 0;
-    var itemLines = '';
-    
-    selected.forEach(function (price, type) {
-      var qty = parseInt(document.getElementById('qty-' + type).textContent);
-      var sub = qty * price * (days || 1); // Cost per selection
-      totalCost += (qty * price * (days || 0));
-      itemLines += '<div class="cost-row"><span>' + qty + ' × ' + NAMES[type] + '</span><span class="font-mono">₱' + sub.toLocaleString() + '</span></div>';
+    // Build Summary HTML
+    let html = '';
+    let grandTotal = 0;
+
+    selectedItems.forEach((data, name) => {
+      const itemTotal = data.price * data.qty * (days || 1);
+      grandTotal += (data.price * data.qty * (days || 0)); // Only add to total if days > 0
+      html += `
+        <div class="d-flex justify-content-between small mb-1">
+          <span>${name} x ${data.qty}</span>
+          <span>₱${itemTotal.toLocaleString()}</span>
+        </div>`;
     });
 
-    document.getElementById('summaryItems').innerHTML = itemLines || '<p style="text-align:center;font-size:13px;color:#6b7280;">No items selected.</p>';
-    document.getElementById('summaryDays').textContent = days + ' day(s)';
-    document.getElementById('summaryTotal').textContent = '₱' + totalCost.toLocaleString(undefined, {minimumFractionDigits: 2});
-    document.getElementById('summaryBase').textContent = '₱' + totalCost.toLocaleString(undefined, {minimumFractionDigits: 2});
-    
-    // Disable/Enable Submit Button
-    document.getElementById('submitBtn').disabled = !(selected.size > 0 && days > 0);
+    listDiv.innerHTML = html || '<p class="text-muted text-center py-3">No items selected.</p>';
+    durationSpan.innerText = `${days} day(s)`;
+    totalSpan.innerText = `₱${grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+    // Enable button only if conditions are met
+    submitBtn.disabled = !(selectedItems.size > 0 && days > 0);
   }
 
-  document.getElementById('startDate').addEventListener('change', computeCost);
-  document.getElementById('endDate').addEventListener('change', computeCost);
+  // FINAL STEP: Form Submission Payload
+  document.getElementById('rentalForm').onsubmit = function(e) {
+    const container = document.getElementById('hiddenInputsContainer');
+    container.innerHTML = ''; // Clear existing
 
-  // CRITICAL: Final check before form sends to Server
-  document.getElementById('rentalForm').addEventListener('submit', function (e) {
-    var counter = 0;
-    
-    // Disable all first to prevent accidental submissions of unselected items
-    document.querySelectorAll('.item-type-input, .item-qty-input').forEach(input => input.disabled = true);
+    let index = 0;
+    selectedItems.forEach((data, name) => {
+      // Item Type Input
+      const inputType = document.createElement('input');
+      inputType.type = 'hidden';
+      inputType.name = `items[${index}][itemType]`;
+      inputType.value = name;
+      container.appendChild(inputType);
 
-    selected.forEach(function (_, type) {
-      var tInput = document.getElementById('itype-' + type);
-      var qInput = document.getElementById('iqty-' + type);
-      
-      // We re-name them to be 0, 1, 2... so the server doesn't get "gaps" in the array
-      tInput.name = 'items[' + counter + '][itemType]';
-      qInput.name = 'items[' + counter + '][quantity]';
-      
-      tInput.disabled = false;
-      qInput.disabled = false;
-      counter++;
+      // Quantity Input
+      const inputQty = document.createElement('input');
+      inputQty.type = 'hidden';
+      inputQty.name = `items[${index}][quantity]`;
+      inputQty.value = data.qty;
+      container.appendChild(inputQty);
+
+      index++;
     });
 
-    if (selected.size === 0) {
-      e.preventDefault();
-      alert('Please select at least one item.');
-    }
-  });
-});
+    return true; // Allow form to submit
+  };
 </script>
