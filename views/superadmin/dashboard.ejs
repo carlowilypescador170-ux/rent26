@@ -1,0 +1,157 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'Super Admin Panel' %>
+
+<div class="page-header">
+  <div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h1><i class="bi bi-shield-check me-2" style="font-size:28px;"></i>Super Admin Panel</h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb"><li class="breadcrumb-item active">Super Admin Dashboard</li></ol>
+        </nav>
+      </div>
+      <span style="font-size:12px;background:rgba(201,150,58,0.2);border:1px solid rgba(201,150,58,0.4);color:var(--gold-lt);padding:6px 14px;border-radius:20px;font-family:'DM Mono',monospace;letter-spacing:1px;">
+        SUPERADMIN
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="stat-value"><%= stats.totalUsers || 0 %></div>
+        <div class="stat-label">Customers</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#553C9A,#805AD5);"><i class="bi bi-person-badge-fill"></i></div>
+        <div class="stat-value" style="color:#553C9A;"><%= stats.totalAdmins || 0 %></div>
+        <div class="stat-label">Admins</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,var(--gold),var(--gold-lt));"><i class="bi bi-cash-coin"></i></div>
+        <div class="stat-value" style="color:var(--gold);font-size:22px;">₱<%= ((stats.totalRevenue || 0)/1000).toFixed(0) %>k</div>
+        <div class="stat-label">Total Revenue</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#276749,#48BB78);"><i class="bi bi-check-all"></i></div>
+        <div class="stat-value" style="color:#276749;"><%= stats.totalRentals || 0 %></div>
+        <div class="stat-label">Total Rentals</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#D69E2E,#ECC94B);"><i class="bi bi-hourglass"></i></div>
+        <div class="stat-value" style="color:#D69E2E;"><%= stats.pending || 0 %></div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#2B6CB0,#4299E1);"><i class="bi bi-journal-text"></i></div>
+        <div class="stat-value" style="color:#2B6CB0;"><%= stats.auditLogs || 0 %></div>
+        <div class="stat-label">Audit Logs</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Recent Audit Logs -->
+    <div class="col-xl-8">
+      <div class="jm-card">
+        <div class="jm-card-header d-flex justify-content-between align-items-center">
+          <h5><i class="bi bi-journal-check me-2"></i>Recent Audit Activity</h5>
+          <a href="/superadmin/audit" class="btn btn-sm btn-outline-light" style="font-size:12px;">Full Log</a>
+        </div>
+        <div class="jm-card-body p-0">
+          <div class="table-responsive">
+            <table class="jm-table">
+              <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Status</th></tr></thead>
+              <tbody>
+                <% if (recentLogs && recentLogs.length > 0) { %>
+                  <% recentLogs.forEach(log => { %>
+                    <tr>
+                      <td style="font-size:12px;color:var(--text-muted);white-space:nowrap;"><%= new Date(log.createdAt).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) %></td>
+                      <td>
+                        <div style="font-size:13px;font-weight:500;"><%= log.performedBy ? log.performedBy.fullName : 'System' %></div>
+                        <div class="font-mono" style="font-size:11px;color:var(--text-muted);"><%= log.role %></div>
+                      </td>
+                      <td><span class="font-mono" style="font-size:12px;background:var(--maroon-pale);color:var(--maroon);padding:2px 8px;border-radius:4px;"><%= log.action %></span></td>
+                      <td style="font-size:12px;color:var(--text-muted);"><%= log.targetCollection || '—' %></td>
+                      <td>
+                        <span class="status-badge <%= log.status === 'success' ? 'status-approved' : 'status-cancelled' %>"><%= log.status %></span>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr><td colspan="5" class="text-center py-4" style="color:var(--text-muted);">No audit logs yet.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions & Charts -->
+    <div class="col-xl-4">
+      <div class="jm-card mb-4">
+        <div class="jm-card-header"><h5><i class="bi bi-lightning me-2"></i>Super Admin Actions</h5></div>
+        <div class="jm-card-body d-grid gap-2">
+          <a href="/superadmin/users" class="btn btn-outline-maroon text-start"><i class="bi bi-people me-2"></i>Manage All Users</a>
+          <a href="/superadmin/audit" class="btn btn-outline-maroon text-start"><i class="bi bi-journal-text me-2"></i>Full Audit Log</a>
+          <a href="/admin/rentals" class="btn btn-outline-maroon text-start"><i class="bi bi-calendar-check me-2"></i>All Rentals</a>
+          <a href="/admin/items" class="btn btn-outline-maroon text-start"><i class="bi bi-box me-2"></i>Item Inventory</a>
+        </div>
+      </div>
+
+      <!-- Revenue Chart -->
+      <div class="jm-card">
+        <div class="jm-card-header"><h5><i class="bi bi-graph-up me-2"></i>Revenue Split</h5></div>
+        <div class="jm-card-body"><canvas id="revenueChart" height="200"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% extraScripts = `
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Chair', 'Table', 'Long Table', 'Videoke'],
+      datasets: [{
+        label: 'Revenue (₱)',
+        data: [
+          ${revenueByType ? revenueByType.chair : 0},
+          ${revenueByType ? revenueByType.table : 0},
+          ${revenueByType ? revenueByType.long_table : 0},
+          ${revenueByType ? revenueByType.videoke : 0},
+        ],
+        backgroundColor: ['rgba(123,28,46,0.7)','rgba(123,28,46,0.5)','rgba(123,28,46,0.35)','rgba(201,150,58,0.8)'],
+        borderRadius: 6,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => '₱' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+</script>
+` %>

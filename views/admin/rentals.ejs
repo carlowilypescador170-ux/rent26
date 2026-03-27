@@ -1,0 +1,157 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'Manage Rentals' %>
+
+<div class="page-header">
+  <div class="container-fluid px-4">
+    <h1><i class="bi bi-calendar-check me-2" style="font-size:28px;"></i>Manage Rentals</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+        <li class="breadcrumb-item active">Rentals</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Filters -->
+  <div class="jm-card mb-4">
+    <div class="jm-card-body">
+      <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            <% ['pending','approved','active','completed','cancelled','rejected'].forEach(s => { %>
+              <option value="<%= s %>" <%= currentStatus === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Search</label>
+          <input type="text" name="search" class="form-control" placeholder="Ref # or customer name..." value="<%= search || '' %>" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Payment</label>
+          <select name="payment" class="form-select">
+            <option value="">All</option>
+            <option value="unpaid"  <%= currentPayment === 'unpaid'  ? 'selected' : '' %>>Unpaid</option>
+            <option value="partial" <%= currentPayment === 'partial' ? 'selected' : '' %>>Partial</option>
+            <option value="paid"    <%= currentPayment === 'paid'    ? 'selected' : '' %>>Paid</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-maroon w-100"><i class="bi bi-search me-2"></i>Filter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="jm-card">
+    <div class="jm-card-body p-0">
+      <div class="table-responsive">
+        <table class="jm-table">
+          <thead>
+            <tr>
+              <th>Ref #</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Start</th>
+              <th>Days</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (rentals && rentals.length > 0) { %>
+              <% rentals.forEach(r => { %>
+                <tr>
+                  <td><span class="ref-num"><%= r.referenceNumber %></span></td>
+                  <td>
+                    <div style="font-size:14px;font-weight:500;"><%= r.customer.fullName %></div>
+                    <div style="font-size:11px;color:var(--text-muted);">@<%= r.customer.username %></div>
+                  </td>
+                  <td style="font-size:12px;max-width:160px;"><%= r.items.map(i => i.quantity+'×'+i.itemType.replace('_',' ')).join(', ') %></td>
+                  <td style="font-size:13px;"><%= new Date(r.rentalStartDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'2-digit'}) %></td>
+                  <td class="font-mono" style="text-align:center;"><%= r.numberOfDays %></td>
+                  <td style="font-weight:700;color:var(--maroon);">₱<%= r.totalCost.toLocaleString() %></td>
+                  <td><span class="status-badge <%= r.paymentStatus==='paid'?'status-approved':r.paymentStatus==='partial'?'status-active':'status-pending' %>"><%= r.paymentStatus %></span></td>
+                  <td><span class="status-badge status-<%= r.status %>"><%= r.status %></span></td>
+                  <td>
+                    <div class="d-flex gap-1 flex-wrap">
+                      <a href="/admin/rentals/<%= r._id %>" class="btn btn-sm btn-outline-maroon" style="font-size:11px;padding:3px 8px;">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <% if (r.status === 'pending') { %>
+                        <form action="/admin/rentals/<%= r._id %>/approve" method="POST" style="display:inline;">
+                          <button type="submit" class="btn btn-sm" style="background:#D1FAE5;color:#065F46;font-size:11px;padding:3px 8px;" title="Approve">
+                            <i class="bi bi-check-lg"></i>
+                          </button>
+                        </form>
+                        <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;font-size:11px;padding:3px 8px;" title="Reject"
+                          data-bs-toggle="modal" data-bs-target="#rejectModal" data-id="<%= r._id %>">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="9" class="text-center py-4" style="color:var(--text-muted);">No rentals found.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+    <nav class="mt-3">
+      <ul class="pagination justify-content-center">
+        <% for (let p = 1; p <= totalPages; p++) { %>
+          <li class="page-item <%= p === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= p %>&status=<%= currentStatus||'' %>&search=<%= search||'' %>"
+              style="<%= p === currentPage ? 'background:var(--maroon);border-color:var(--maroon);' : 'color:var(--maroon);' %>"><%= p %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#991B1B,#B91C1C);color:white;border:none;">
+        <h5 class="modal-title font-display"><i class="bi bi-x-circle me-2"></i>Reject Rental</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="rejectForm" method="POST">
+        <div class="modal-body p-4">
+          <label class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+          <textarea name="rejectionReason" class="form-control" rows="3" placeholder="Explain why this rental is being rejected..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-maroon" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-2"></i>Reject Rental</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<% extraScripts = `
+<script>
+  document.getElementById('rejectModal').addEventListener('show.bs.modal', function(e) {
+    const id = e.relatedTarget.dataset.id;
+    document.getElementById('rejectForm').action = '/admin/rentals/' + id + '/reject';
+  });
+</script>
+` %>

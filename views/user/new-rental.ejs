@@ -1,0 +1,402 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'New Rental' %>
+
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h1><i class="bi bi-plus-circle me-2" style="font-size:28px;"></i>New Rental</h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,0.6);">Home</a></li>
+            <li class="breadcrumb-item"><a href="/user/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/user/rentals" style="color:rgba(255,255,255,0.6);">My Rentals</a></li>
+            <li class="breadcrumb-item active">New Rental</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+  <form id="rentalForm" action="/user/rentals" method="POST">
+
+    <div class="row g-4">
+
+      <!-- LEFT: Item Selection + Dates + Address -->
+      <div class="col-lg-8">
+
+        <!-- Step 1: Select Items -->
+        <div class="jm-card mb-4">
+          <div class="jm-card-body">
+            <h5 class="font-display mb-3" style="color:var(--maroon);">
+              <i class="bi bi-box-seam me-2"></i>Step 1 — Select Items
+            </h5>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+              Click an item card to select it, then adjust the quantity.
+            </p>
+
+            <div class="row g-3">
+
+              <!-- Chair -->
+              <div class="col-6 col-md-3">
+                <div class="item-card" id="card-chair" onclick="toggleItem('chair')" style="cursor:pointer;">
+                  <div class="item-icon"><i class="bi bi-person-workspace"></i></div>
+                  <div class="item-name">Chair</div>
+                  <div class="item-price">₱7 / day</div>
+                </div>
+                <div class="qty-row" id="qty-row-chair" style="display:none;">
+                  <button type="button" class="qty-btn" onclick="changeQty('chair', -1)">−</button>
+                  <span class="qty-val" id="qty-chair">1</span>
+                  <button type="button" class="qty-btn" onclick="changeQty('chair', 1)">+</button>
+                </div>
+                <input type="hidden" name="items[0][itemType]" value="chair"    id="itype-chair" disabled>
+                <input type="hidden" name="items[0][quantity]" value="1"        id="iqty-chair"  disabled>
+              </div>
+
+              <!-- Round Table -->
+              <div class="col-6 col-md-3">
+                <div class="item-card" id="card-table" onclick="toggleItem('table')" style="cursor:pointer;">
+                  <div class="item-icon"><i class="bi bi-circle"></i></div>
+                  <div class="item-name">Round Table</div>
+                  <div class="item-price">₱50 / day</div>
+                </div>
+                <div class="qty-row" id="qty-row-table" style="display:none;">
+                  <button type="button" class="qty-btn" onclick="changeQty('table', -1)">−</button>
+                  <span class="qty-val" id="qty-table">1</span>
+                  <button type="button" class="qty-btn" onclick="changeQty('table', 1)">+</button>
+                </div>
+                <input type="hidden" name="items[1][itemType]" value="table"    id="itype-table" disabled>
+                <input type="hidden" name="items[1][quantity]" value="1"        id="iqty-table"  disabled>
+              </div>
+
+              <!-- Long Table -->
+              <div class="col-6 col-md-3">
+                <div class="item-card" id="card-long_table" onclick="toggleItem('long_table')" style="cursor:pointer;">
+                  <div class="item-icon"><i class="bi bi-layout-text-window"></i></div>
+                  <div class="item-name">Long Table</div>
+                  <div class="item-price">₱100 / day</div>
+                </div>
+                <div class="qty-row" id="qty-row-long_table" style="display:none;">
+                  <button type="button" class="qty-btn" onclick="changeQty('long_table', -1)">−</button>
+                  <span class="qty-val" id="qty-long_table">1</span>
+                  <button type="button" class="qty-btn" onclick="changeQty('long_table', 1)">+</button>
+                </div>
+                <input type="hidden" name="items[2][itemType]" value="long_table" id="itype-long_table" disabled>
+                <input type="hidden" name="items[2][quantity]" value="1"          id="iqty-long_table"  disabled>
+              </div>
+
+              <!-- Videoke -->
+              <div class="col-6 col-md-3">
+                <div class="item-card" id="card-videoke" onclick="toggleItem('videoke')" style="cursor:pointer;">
+                  <div class="item-icon"><i class="bi bi-mic"></i></div>
+                  <div class="item-name">Videoke</div>
+                  <div class="item-price">₱400 / day</div>
+                </div>
+                <div class="qty-row" id="qty-row-videoke" style="display:none;">
+                  <button type="button" class="qty-btn" onclick="changeQty('videoke', -1)">−</button>
+                  <span class="qty-val" id="qty-videoke">1</span>
+                  <button type="button" class="qty-btn" onclick="changeQty('videoke', 1)">+</button>
+                </div>
+                <input type="hidden" name="items[3][itemType]" value="videoke" id="itype-videoke" disabled>
+                <input type="hidden" name="items[3][quantity]" value="1"       id="iqty-videoke"  disabled>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Rental Dates -->
+        <div class="jm-card mb-4">
+          <div class="jm-card-body">
+            <h5 class="font-display mb-3" style="color:var(--maroon);">
+              <i class="bi bi-calendar3 me-2"></i>Step 2 — Rental Dates
+            </h5>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label" style="font-size:13px;font-weight:600;">Start Date</label>
+                <input type="date" class="form-control" id="startDate" name="rentalStartDate" required
+                  min="<%= new Date().toISOString().split('T')[0] %>">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" style="font-size:13px;font-weight:600;">End Date</label>
+                <input type="date" class="form-control" id="endDate" name="rentalEndDate" required
+                  min="<%= new Date().toISOString().split('T')[0] %>">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Delivery Address -->
+        <div class="jm-card mb-4">
+          <div class="jm-card-body">
+            <h5 class="font-display mb-3" style="color:var(--maroon);">
+              <i class="bi bi-geo-alt me-2"></i>Step 3 — Delivery Address
+            </h5>
+            <textarea class="form-control" id="deliveryAddress" name="deliveryAddress"
+              rows="3" placeholder="Enter your full delivery address..." required
+              style="font-size:13px;resize:vertical;"></textarea>
+          </div>
+        </div>
+
+        <!-- Step 4: Notes (optional) -->
+        <div class="jm-card">
+          <div class="jm-card-body">
+            <h5 class="font-display mb-3" style="color:var(--maroon);">
+              <i class="bi bi-chat-left-text me-2"></i>Step 4 — Additional Notes
+              <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(optional)</span>
+            </h5>
+            <textarea class="form-control" name="notes" rows="2"
+              placeholder="Any special instructions or requests..."
+              style="font-size:13px;resize:vertical;"></textarea>
+          </div>
+        </div>
+
+      </div><!-- /col-lg-8 -->
+
+      <!-- RIGHT: Cost Summary -->
+      <div class="col-lg-4">
+        <div class="jm-card" style="position:sticky;top:16px;">
+          <div class="jm-card-body">
+            <h5 class="font-display mb-3" style="color:var(--maroon);">
+              <i class="bi bi-receipt me-2"></i>Cost Summary
+            </h5>
+
+            <div id="summaryItems">
+              <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0;">
+                No items selected.
+              </p>
+            </div>
+
+            <hr style="border-color:var(--border);">
+
+            <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+              <span style="color:var(--text-muted);">Duration</span>
+              <span id="summaryDays" style="font-weight:600;">0 day(s)</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+              <span style="color:var(--text-muted);">Subtotal</span>
+              <span id="summaryBase" class="font-mono">₱0.00</span>
+            </div>
+
+            <hr style="border-color:var(--border);">
+
+            <div class="d-flex justify-content-between mb-3">
+              <span style="font-weight:700;font-size:15px;">Total</span>
+              <span id="summaryTotal" class="font-mono"
+                style="font-family:'Playfair Display',serif;font-size:20px;color:var(--maroon);font-weight:700;">
+                ₱0.00
+              </span>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-maroon w-100" >
+              <i class="bi bi-send me-2"></i>Submit Rental Request
+            </button>
+            <a href="/user/rentals" class="btn btn-outline-maroon w-100 mt-2" style="font-size:13px;">
+              <i class="bi bi-arrow-left me-1"></i>Back to My Rentals
+            </a>
+
+          </div>
+        </div>
+      </div><!-- /col-lg-4 -->
+
+    </div><!-- /row -->
+  </form>
+</div>
+
+<!-- ── Scoped Styles ─────────────────────────────────────────── -->
+<style>
+  .item-card {
+    border: 2px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px 8px;
+    text-align: center;
+    transition: all .2s ease;
+    background: #fff;
+    user-select: none;
+  }
+  .item-card:hover {
+    border-color: var(--maroon, #7c1c2e);
+    background: var(--maroon-pale, #fdf2f4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124,28,46,.12);
+  }
+  .item-card.selected {
+    border-color: var(--maroon, #7c1c2e);
+    background: var(--maroon-pale, #fdf2f4);
+    box-shadow: 0 0 0 3px rgba(124,28,46,.15);
+  }
+  .item-icon {
+    font-size: 28px;
+    color: var(--maroon, #7c1c2e);
+    margin-bottom: 6px;
+  }
+  .item-name  { font-size: 13px; font-weight: 700; color: #1f2937; }
+  .item-price { font-size: 11px; color: var(--text-muted, #6b7280); margin-top: 2px; }
+
+  .qty-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .qty-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--maroon, #7c1c2e);
+    background: transparent;
+    color: var(--maroon, #7c1c2e);
+    font-size: 16px; font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+  }
+  .qty-btn:hover { background: var(--maroon, #7c1c2e); color: #fff; }
+  .qty-val  { font-size: 15px; font-weight: 700; min-width: 24px; text-align: center; }
+
+  .cost-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    color: #374151;
+  }
+  .font-mono { font-family: 'Courier New', monospace; }
+</style>
+
+<!-- ── Script ────────────────────────────────────────────────── -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const PRICES = { chair: 7, table: 50, long_table: 100, videoke: 400 };
+  const NAMES  = { chair: 'Chair', table: 'Round Table', long_table: 'Long Table', videoke: 'Videoke' };
+  const INDICES = { chair: 0, table: 1, long_table: 2, videoke: 3 };
+
+  const selected = new Set();
+
+  /* ── Toggle item selection ── */
+  window.toggleItem = function (type) {
+    const card   = document.getElementById('card-' + type);
+    const qtyRow = document.getElementById('qty-row-' + type);
+    const itype  = document.getElementById('itype-' + type);
+    const iqty   = document.getElementById('iqty-'  + type);
+
+    if (selected.has(type)) {
+      selected.delete(type);
+      card.classList.remove('selected');
+      qtyRow.style.display = 'none';
+      itype.disabled = true;
+      iqty.disabled  = true;
+    } else {
+      selected.add(type);
+      card.classList.add('selected');
+      qtyRow.style.display = 'flex';
+      itype.disabled = false;
+      iqty.disabled  = false;
+    }
+
+    computeCost();
+  };
+
+  /* ── Change quantity ── */
+  window.changeQty = function (type, delta) {
+    const display   = document.getElementById('qty-'  + type);
+    const hiddenQty = document.getElementById('iqty-' + type);
+
+    let val = parseInt(display.textContent) + delta;
+    if (val < 1) val = 1;
+
+    display.textContent = val;
+    hiddenQty.value     = val;
+
+    computeCost();
+  };
+
+  /* ── Recompute cost summary ── */
+  function computeCost() {
+    const startVal = document.getElementById('startDate').value;
+    const endVal   = document.getElementById('endDate').value;
+
+    let days = 0;
+    if (startVal && endVal) {
+      const start = new Date(startVal);
+      const end   = new Date(endVal);
+      if (end >= start) {
+        days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      }
+    }
+
+    let baseCost  = 0;
+    let itemLines = '';
+
+    selected.forEach(type => {
+      const qty   = parseInt(document.getElementById('qty-' + type).textContent);
+      const price = PRICES[type];
+      const sub   = qty * price * days;
+      baseCost   += sub;
+
+      itemLines += `
+        <div class="cost-row">
+          <span>${qty}× ${NAMES[type]} @ ₱${price}/day × ${days}d</span>
+          <span class="font-mono">₱${sub.toLocaleString('en-PH',{minimumFractionDigits:2})}</span>
+        </div>`;
+    });
+
+    document.getElementById('summaryItems').innerHTML =
+      itemLines ||
+      '<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0;">No items selected.</p>';
+
+    document.getElementById('summaryDays').textContent  = days + ' day(s)';
+    document.getElementById('summaryBase').textContent  = '₱' + baseCost.toLocaleString('en-PH',{minimumFractionDigits:2});
+    document.getElementById('summaryTotal').textContent = '₱' + baseCost.toLocaleString('en-PH',{minimumFractionDigits:2});
+
+    document.getElementById('submitBtn').disabled = !(selected.size > 0 && days > 0);
+  }
+
+  /* ── Date change listeners ── */
+  document.getElementById('startDate').addEventListener('change', function () {
+    // ensure endDate can't be before startDate
+    const endInput = document.getElementById('endDate');
+    if (endInput.value && endInput.value < this.value) {
+      endInput.value = this.value;
+    }
+    endInput.min = this.value;
+    computeCost();
+  });
+
+  document.getElementById('endDate').addEventListener('change', computeCost);
+
+  /* ── On submit: enable only selected items so they post correctly ── */
+  document.getElementById('rentalForm').addEventListener('submit', function (e) {
+    const allTypes = ['chair', 'table', 'long_table', 'videoke'];
+
+    allTypes.forEach(type => {
+      const itype = document.getElementById('itype-' + type);
+      const iqty  = document.getElementById('iqty-'  + type);
+
+      if (selected.has(type)) {
+        itype.disabled = false;
+        iqty.disabled  = false;
+      } else {
+        itype.disabled = true;
+        iqty.disabled  = true;
+      }
+    });
+
+    // basic validation guard
+    if (selected.size === 0) {
+      e.preventDefault();
+      alert('Please select at least one item.');
+      return;
+    }
+    if (!document.getElementById('startDate').value || !document.getElementById('endDate').value) {
+      e.preventDefault();
+      alert('Please select start and end dates.');
+    }
+  });
+
+});
+</script>

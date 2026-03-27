@@ -1,0 +1,160 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'My Dashboard' %>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="container">
+    <h1><i class="bi bi-house-door me-2" style="font-size:28px;"></i>My Dashboard</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,0.6);">Home</a></li>
+        <li class="breadcrumb-item active">Dashboard</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="container py-4">
+
+  <!-- Welcome Banner -->
+  <div class="jm-card mb-4" style="background:linear-gradient(135deg,var(--maroon-dk),var(--maroon));color:white;border:none;">
+    <div class="jm-card-body d-flex align-items-center gap-4">
+      <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--gold);flex-shrink:0;">
+        <% if (currentUser.profilePicture) { %>
+          <img src="<%= currentUser.profilePicture %>" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+        <% } else { %><%= currentUser.fullName.charAt(0).toUpperCase() %><% } %>
+      </div>
+      <div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;">Welcome back</div>
+        <h3 class="font-display mb-0" style="font-size:24px;"><%= currentUser.fullName %></h3>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:2px;"><i class="bi bi-geo-alt me-1"></i><%= currentUser.location %></div>
+      </div>
+      <div class="ms-auto d-none d-md-block">
+        <a href="/user/rentals/new" class="btn btn-gold">
+          <i class="bi bi-plus-circle me-2"></i>New Rental
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+        <div class="stat-value"><%= stats.total || 0 %></div>
+        <div class="stat-label">Total Rentals</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#D69E2E,#ECC94B);"><i class="bi bi-hourglass-split"></i></div>
+        <div class="stat-value" style="color:#D69E2E;"><%= stats.pending || 0 %></div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#2F855A,#48BB78);"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-value" style="color:#2F855A;"><%= stats.active || 0 %></div>
+        <div class="stat-label">Active</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,var(--gold),var(--gold-lt));"><i class="bi bi-currency-exchange"></i></div>
+        <div class="stat-value" style="color:var(--gold);">₱<%= (stats.totalSpent || 0).toLocaleString() %></div>
+        <div class="stat-label">Total Spent</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Recent Rentals -->
+    <div class="col-lg-8">
+      <div class="jm-card">
+        <div class="jm-card-header d-flex justify-content-between align-items-center">
+          <h5><i class="bi bi-clock-history me-2"></i>Recent Rentals</h5>
+          <a href="/user/rentals" class="btn btn-sm btn-outline-light" style="font-size:12px;">View All</a>
+        </div>
+        <div class="jm-card-body p-0">
+          <% if (recentRentals && recentRentals.length > 0) { %>
+            <div class="table-responsive">
+              <table class="jm-table">
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+                    <th>Items</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% recentRentals.forEach(rental => { %>
+                    <tr>
+                      <td><span class="ref-num"><%= rental.referenceNumber %></span></td>
+                      <td style="font-size:13px;color:var(--text-muted);"><%= rental.items.length %> item(s)</td>
+                      <td style="font-size:13px;"><%= new Date(rental.rentalStartDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) %></td>
+                      <td style="font-weight:700;color:var(--maroon);">₱<%= rental.totalCost.toLocaleString() %></td>
+                      <td><span class="status-badge status-<%= rental.status %>"><%= rental.status %></span></td>
+                      <td><a href="/user/rentals/<%= rental._id %>" class="btn btn-sm btn-outline-maroon" style="font-size:11px;padding:3px 10px;">View</a></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-center py-5" style="color:var(--text-muted);">
+              <i class="bi bi-box-seam" style="font-size:40px;opacity:0.3;display:block;margin-bottom:12px;"></i>
+              <p style="margin:0;">No rentals yet.</p>
+              <a href="/user/rentals/new" class="btn btn-maroon btn-sm mt-3">Make Your First Rental</a>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div class="col-lg-4">
+      <div class="jm-card h-100">
+        <div class="jm-card-header d-flex justify-content-between align-items-center">
+          <h5><i class="bi bi-bell me-2"></i>Notifications</h5>
+          <% if (unreadNotificationCount > 0) { %>
+            <span class="badge" style="background:var(--gold);color:var(--maroon-dk);font-family:'DM Mono',monospace;"><%= unreadNotificationCount %></span>
+          <% } %>
+        </div>
+        <div class="jm-card-body p-0">
+          <% if (notifications && notifications.length > 0) { %>
+            <% notifications.slice(0,6).forEach(n => { %>
+              <div class="d-flex gap-3 align-items-start p-3" style="border-bottom:1px solid var(--border-lt);<%= !n.isRead ? 'background:var(--maroon-pale);' : '' %>">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--maroon);display:flex;align-items:center;justify-content:center;font-size:16px;color:white;flex-shrink:0;">
+                  <% if (n.type.includes('APPROVED')) { %><i class="bi bi-check-circle"></i>
+                  <% } else if (n.type.includes('REJECTED')) { %><i class="bi bi-x-circle"></i>
+                  <% } else if (n.type.includes('REMINDER')) { %><i class="bi bi-alarm"></i>
+                  <% } else { %><i class="bi bi-bell"></i><% } %>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13px;font-weight:<%= n.isRead ? '400' : '700' %>;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= n.title %></div>
+                  <div style="font-size:11.5px;color:var(--text-muted);">
+                    <%= new Date(n.createdAt).toLocaleDateString('en-PH',{month:'short',day:'numeric'}) %>
+                    <% if (!n.isRead) { %><span class="badge ms-1" style="background:var(--gold);color:var(--maroon-dk);font-size:9px;">NEW</span><% } %>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+            <div class="p-3 text-center">
+              <a href="/notifications" style="font-size:13px;color:var(--maroon);font-weight:700;">View all notifications →</a>
+            </div>
+          <% } else { %>
+            <div class="text-center py-4" style="color:var(--text-muted);">
+              <i class="bi bi-bell-slash" style="font-size:32px;opacity:0.3;display:block;margin-bottom:8px;"></i>
+              <p style="font-size:13px;margin:0;">No notifications yet.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

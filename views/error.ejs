@@ -1,0 +1,27 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = statusCode + ' Error' %>
+
+<div style="min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:40px 16px;">
+  <div class="text-center" style="max-width:480px;">
+    <div style="font-family:'Playfair Display',serif;font-size:96px;font-weight:900;color:var(--maroon);opacity:0.15;line-height:1;margin-bottom:-20px;">
+      <%= statusCode %>
+    </div>
+    <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--maroon),var(--maroon-lt));display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:var(--shadow-lg);">
+      <% if (statusCode === 404) { %>
+        <i class="bi bi-search" style="font-size:32px;color:white;"></i>
+      <% } else { %>
+        <i class="bi bi-exclamation-triangle" style="font-size:32px;color:white;"></i>
+      <% } %>
+    </div>
+    <h2 class="font-display" style="color:var(--maroon);font-size:28px;margin-bottom:10px;">
+      <%= statusCode === 404 ? 'Page Not Found' : 'Something Went Wrong' %>
+    </h2>
+    <p style="color:var(--text-muted);font-size:15px;margin-bottom:28px;line-height:1.7;">
+      <%= message || (statusCode === 404 ? "The page you're looking for doesn't exist or has been moved." : "An unexpected error occurred. Please try again.") %>
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="javascript:history.back()" class="btn btn-outline-maroon"><i class="bi bi-arrow-left me-2"></i>Go Back</a>
+      <a href="/" class="btn btn-maroon"><i class="bi bi-house me-2"></i>Home</a>
+    </div>
+  </div>
+</div>

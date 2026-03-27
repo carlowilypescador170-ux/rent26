@@ -1,0 +1,434 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'Register' %>
+
+<style>
+  .auth-page {
+    min-height: calc(100vh - 62px);
+    background: linear-gradient(135deg, var(--maroon-dk) 0%, var(--maroon) 100%);
+    padding: 40px 16px; position: relative; overflow: hidden;
+  }
+  .auth-page::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 80% 50%, rgba(201,150,58,0.1) 0%, transparent 55%);
+  }
+  .auth-card {
+    background: white; border-radius: 20px;
+    padding: 40px; width: 100%; max-width: 560px; margin: 0 auto;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+    position: relative; z-index: 1;
+    animation: fadeInUp 0.5s ease both;
+  }
+  .auth-logo { text-align: center; margin-bottom: 24px; }
+  .auth-logo img { width: 46px; object-fit: contain; margin-bottom: 8px; }
+  .auth-logo h4 { font-family: 'Playfair Display', serif; color: var(--maroon); font-size: 20px; margin: 0; }
+  .step-indicators { display: flex; gap: 6px; justify-content: center; margin-bottom: 28px; }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: var(--transition); }
+  .step-dot.active { background: var(--maroon); width: 24px; border-radius: 4px; }
+  .password-strength { height: 4px; border-radius: 2px; margin-top: 6px; transition: all 0.3s; }
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── Validation States ───────────────────────────────────────────── */
+  .field-wrap { position: relative; }
+
+  /* Valid state — green border + check icon */
+  .field-wrap.is-valid .form-control,
+  .field-wrap.is-valid .input-group .form-control {
+    border-color: #38A169 !important;
+    box-shadow: 0 0 0 3px rgba(56,161,105,0.12) !important;
+  }
+  .field-wrap.is-valid .input-group { border-radius: 8px; box-shadow: 0 0 0 3px rgba(56,161,105,0.12); }
+  .field-wrap.is-valid .vicon { color: #38A169; display: flex; }
+
+  /* Invalid state — red border */
+  .field-wrap.is-invalid .form-control,
+  .field-wrap.is-invalid .input-group .form-control {
+    border-color: #E53E3E !important;
+    box-shadow: 0 0 0 3px rgba(229,62,62,0.12) !important;
+  }
+  .field-wrap.is-invalid .input-group { border-radius: 8px; box-shadow: 0 0 0 3px rgba(229,62,62,0.12); }
+  .field-wrap.is-invalid .vicon { color: #E53E3E; display: flex; }
+
+  /* Validation icon (top-right of field) */
+  .vicon {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  /* Shift icon left when field has eye-toggle button */
+  .has-toggle .vicon { right: 48px; }
+
+  /* Feedback message below field */
+  .field-msg {
+    font-size: 11.5px;
+    margin-top: 4px;
+    min-height: 17px;
+    display: block;
+    transition: color 0.2s;
+  }
+  .field-msg.ok  { color: #38A169; }
+  .field-msg.err { color: #E53E3E; }
+  .field-msg.hint { color: var(--text-muted); }
+
+  /* Shake animation for invalid submit */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.4s ease; }
+
+  /* Submit button disabled look */
+  #submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* Input group styling override for validation border */
+  .input-group .form-control:focus { z-index: 3; }
+</style>
+
+<div class="auth-page py-4">
+  <div class="container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="/images/logo.jpg" alt="J&M Rentals" />
+        <h4>Join J&M <span style="color:var(--gold);">Rentals</span></h4>
+        <span style="font-size:13px;color:var(--text-muted);">Create your free customer account</span>
+      </div>
+
+      <form action="/auth/register" method="POST" novalidate id="registerForm">
+        <div class="row g-3">
+
+          <!-- Full Name -->
+          <div class="col-12">
+            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+            <div class="field-wrap" id="wrap-fullName">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);"><i class="bi bi-person-fill"></i></span>
+                <input type="text" name="fullName" id="fullName" class="form-control"
+                  placeholder="e.g. Juan Dela Cruz"
+                  value="<%= typeof formData !== 'undefined' ? formData.fullName || '' : '' %>"
+                  required minlength="3" autocomplete="name"
+                  
+                   />
+              </div>
+              <span class="vicon" id="vi-fullName"><i class="bi bi-check-circle-fill" id="vic-fullName"></i></span>
+              <span class="field-msg hint" id="msg-fullName">No numbers allowed. Min. 3 characters.</span>
+            </div>
+          </div>
+
+          <!-- Username -->
+          <div class="col-md-6">
+            <label class="form-label">Username <span class="text-danger">*</span></label>
+            <div class="field-wrap" id="wrap-username">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);">@</span>
+                <input type="text" name="username" id="username" class="form-control"
+                  placeholder="e.g. juandelacruz"
+                  value="<%= typeof formData !== 'undefined' ? formData.username || '' : '' %>"
+                  required minlength="3" maxlength="30" pattern="[a-zA-Z0-9_]+"
+                  autocomplete="username"
+                  
+                   />
+              </div>
+              <span class="vicon" id="vi-username"><i class="bi bi-check-circle-fill" id="vic-username"></i></span>
+              <span class="field-msg hint" id="msg-username">3–30 chars. Letters, numbers, underscores only.</span>
+            </div>
+          </div>
+
+          <!-- Phone -->
+          <div class="col-md-6">
+            <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+            <div class="field-wrap" id="wrap-phoneNumber">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);"><i class="bi bi-telephone-fill"></i></span>
+                <input type="tel" name="phoneNumber" id="phoneNumber" class="form-control"
+                  placeholder="09XXXXXXXXX (11 digits)"
+                  value="<%= typeof formData !== 'undefined' ? formData.phoneNumber || '' : '' %>"
+                  required pattern="^(\+63|0)(9\d{9})$"
+                  maxlength="11"
+                  autocomplete="tel"
+                  
+                   />
+              </div>
+              <span class="vicon" id="vi-phoneNumber"><i class="bi bi-check-circle-fill" id="vic-phoneNumber"></i></span>
+              <span class="field-msg hint" id="msg-phoneNumber">Numbers only, exactly 11 digits starting with 09.</span>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="col-12">
+            <label class="form-label">Email Address <span class="text-danger">*</span></label>
+            <div class="field-wrap" id="wrap-email">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);"><i class="bi bi-envelope-fill"></i></span>
+                <input type="email" name="email" id="email" class="form-control"
+                  placeholder="you@example.com"
+                  value="<%= typeof formData !== 'undefined' ? formData.email || '' : '' %>"
+                  required autocomplete="email"
+                  
+                   />
+              </div>
+              <span class="vicon" id="vi-email"><i class="bi bi-check-circle-fill" id="vic-email"></i></span>
+              <span class="field-msg hint" id="msg-email">We'll send your booking updates here.</span>
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div class="col-12">
+            <label class="form-label">Address / Location <span class="text-danger">*</span></label>
+            <div class="field-wrap" id="wrap-location">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);"><i class="bi bi-geo-alt-fill"></i></span>
+                <input type="text" name="location" id="location" class="form-control"
+                  placeholder="Street, Barangay, City, Province"
+                  value="<%= typeof formData !== 'undefined' ? formData.location || '' : '' %>"
+                  required maxlength="255"
+                  autocomplete="street-address"
+                  
+                   />
+              </div>
+              <span class="vicon" id="vi-location"><i class="bi bi-check-circle-fill" id="vic-location"></i></span>
+              <span class="field-msg hint" id="msg-location">Used as default delivery address for your rentals.</span>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="col-md-6">
+            <label class="form-label">Password <span class="text-danger">*</span></label>
+            <div class="field-wrap has-toggle" id="wrap-password">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);"><i class="bi bi-lock-fill"></i></span>
+                <input type="password" name="password" id="passwordField" class="form-control"
+                  placeholder="Min. 8 characters"
+                  required minlength="8"
+                  autocomplete="new-password" />
+                <button type="button" class="input-group-text"
+                  style="background:var(--maroon-pale);border-color:var(--border);cursor:pointer;"
+                  onclick="togglePass('passwordField','eye1')">
+                  <i class="bi bi-eye" id="eye1" style="color:var(--maroon);"></i>
+                </button>
+              </div>
+              <span class="vicon" id="vi-password"><i class="bi bi-check-circle-fill" id="vic-password"></i></span>
+              <div class="password-strength" id="strengthBar" style="background:var(--border); width:0%;"></div>
+              <span class="field-msg hint" id="strengthText"></span>
+              <!-- Password rules checklist -->
+              <div id="passwordRules" style="margin-top:8px;padding:10px 12px;background:var(--maroon-pale);border-radius:8px;border:1px solid var(--border-lt);display:none;">
+                <div style="font-size:11px;font-weight:700;color:var(--maroon);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Password must have:</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">
+                  <div id="rule-len" style="font-size:11.5px;display:flex;align-items:center;gap:3px;"></div>
+                  <div id="rule-up"  style="font-size:11.5px;display:flex;align-items:center;gap:3px;"></div>
+                  <div id="rule-lo"  style="font-size:11.5px;display:flex;align-items:center;gap:3px;"></div>
+                  <div id="rule-num" style="font-size:11.5px;display:flex;align-items:center;gap:3px;"></div>
+                  <div id="rule-sym" style="font-size:11.5px;display:flex;align-items:center;gap:3px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="col-md-6">
+            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+            <div class="field-wrap has-toggle" id="wrap-confirm">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--maroon-pale);border-color:var(--border);color:var(--maroon);"><i class="bi bi-lock-fill"></i></span>
+                <input type="password" name="confirmPassword" id="confirmField" class="form-control"
+                  placeholder="Repeat password"
+                  required minlength="8"
+                  autocomplete="new-password"
+                  
+                   />
+                <button type="button" class="input-group-text"
+                  style="background:var(--maroon-pale);border-color:var(--border);cursor:pointer;"
+                  onclick="togglePass('confirmField','eye2')">
+                  <i class="bi bi-eye" id="eye2" style="color:var(--maroon);"></i>
+                </button>
+              </div>
+              <span class="vicon" id="vi-confirm"><i class="bi bi-check-circle-fill" id="vic-confirm"></i></span>
+              <span class="field-msg hint" id="msg-confirm">Re-enter your password to confirm.</span>
+            </div>
+          </div>
+
+        </div><!-- /row -->
+
+        <div class="mt-4 p-3 rounded-3" style="background:var(--maroon-pale);border:1px solid var(--border-lt);font-size:12px;color:var(--text-muted);">
+          <i class="bi bi-shield-check me-1" style="color:var(--maroon);"></i>
+          By registering, you agree that your personal information will be used to process rental requests.
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-maroon w-100 mt-3 py-2" style="font-size:15px;">
+          <i class="bi bi-person-check me-2"></i>Create Account
+        </button>
+
+        <!-- Overall form hint shown on bad submit -->
+        <div id="formErr" style="display:none;text-align:center;font-size:12.5px;color:#E53E3E;margin-top:10px;">
+          <i class="bi bi-exclamation-triangle me-1"></i>Please fix the highlighted fields above.
+        </div>
+      </form>
+
+      <p class="text-center mt-3 mb-0" style="font-size:14px;color:var(--text-muted);">
+        Already have an account?
+        <a href="/auth/login" style="color:var(--maroon);font-weight:700;">Sign in here</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<% extraScripts = `
+<script>
+  function setFieldState(wrapId, viId, vicId, msgId, state, message) {
+    var wrap = document.getElementById(wrapId);
+    var vi   = document.getElementById(viId);
+    var msg  = document.getElementById(msgId);
+    wrap.classList.remove('is-valid', 'is-invalid');
+    if (state === 'valid') {
+      wrap.classList.add('is-valid');
+      vi.querySelector('i').className = 'bi bi-check-circle-fill';
+      msg.className = 'field-msg ok';
+    } else if (state === 'invalid') {
+      wrap.classList.add('is-invalid');
+      vi.querySelector('i').className = 'bi bi-x-circle-fill';
+      msg.className = 'field-msg err';
+    } else {
+      msg.className = 'field-msg hint';
+    }
+    if (message !== undefined && message !== null) msg.textContent = message;
+  }
+
+  function validateFullName(force) {
+    var el = document.getElementById('fullName');
+    el.value = el.value.replace(/[0-9]/g, '');
+    var val = el.value.trim();
+    if (!val) { if (force) bad('wrap-fullName','msg-fullName','Full name is required.'); return; }
+    if (val.length < 3) { bad('wrap-fullName','msg-fullName','Name must be at least 3 characters.'); return; }
+    ok('wrap-fullName','msg-fullName','✓ Looks good!');
+  }
+
+  function validateUsername(force) {
+    var val = document.getElementById('username').value.trim();
+    if (!val && !force) return;
+    if (!val) return setFieldState('wrap-username','vi-username','vic-username','msg-username','invalid','Username is required.');
+    if (val.length < 3) return setFieldState('wrap-username','vi-username','vic-username','msg-username','invalid','Username must be at least 3 characters.');
+    if (val.length > 30) return setFieldState('wrap-username','vi-username','vic-username','msg-username','invalid','Username cannot exceed 30 characters.');
+    if (!/^[a-zA-Z0-9_]+$/.test(val)) return setFieldState('wrap-username','vi-username','vic-username','msg-username','invalid','Only letters, numbers, and underscores allowed.');
+    if (/^[0-9_]/.test(val)) return setFieldState('wrap-username','vi-username','vic-username','msg-username','invalid','Username must start with a letter.');
+    setFieldState('wrap-username','vi-username','vic-username','msg-username','valid','\u2713 @' + val);
+  }
+
+  function validatePhone(force) {
+    var el = document.getElementById('phoneNumber');
+    // Strip non-digits and cap at 11
+    el.value = el.value.replace(/\D/g, '').slice(0, 11);
+    var val = el.value;
+    if (!val && !force) return;
+    if (!val) return setFieldState('wrap-phoneNumber','vi-phoneNumber','vic-phoneNumber','msg-phoneNumber','invalid','Phone number is required.');
+    if (val.length < 11) return setFieldState('wrap-phoneNumber','vi-phoneNumber','vic-phoneNumber','msg-phoneNumber','invalid', val.length + '/11 digits — keep typing.');
+    if (val.slice(0,2) !== '09') return setFieldState('wrap-phoneNumber','vi-phoneNumber','vic-phoneNumber','msg-phoneNumber','invalid','Must start with 09.');
+    setFieldState('wrap-phoneNumber','vi-phoneNumber','vic-phoneNumber','msg-phoneNumber','valid','\u2713 Valid phone number.');
+  }
+
+  function validateEmail(force) {
+    var val = document.getElementById('email').value.trim();
+    if (!val && !force) return;
+    if (!val) return setFieldState('wrap-email','vi-email','vic-email','msg-email','invalid','Email address is required.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val)) return setFieldState('wrap-email','vi-email','vic-email','msg-email','invalid','Enter a valid email (e.g. you@example.com).');
+    setFieldState('wrap-email','vi-email','vic-email','msg-email','valid','\u2713 Valid email address.');
+  }
+
+  function validateLocation(force) {
+    var val = document.getElementById('location').value.trim();
+    if (!val && !force) return;
+    if (!val) return setFieldState('wrap-location','vi-location','vic-location','msg-location','invalid','Delivery address is required.');
+    if (val.length < 10) return setFieldState('wrap-location','vi-location','vic-location','msg-location','invalid','Please enter a more complete address.');
+    if (val.length > 255) return setFieldState('wrap-location','vi-location','vic-location','msg-location','invalid','Address is too long (max 255 characters).');
+    setFieldState('wrap-location','vi-location','vic-location','msg-location','valid','\u2713 Address recorded.');
+  }
+
+  function setRule(id, passed, label) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '<i class="bi bi-' + (passed ? 'check-circle-fill' : 'circle') + '" style="font-size:11px;color:' + (passed ? '#38A169' : '#CBD5E0') + ';margin-right:4px;"></i><span style="color:' + (passed ? '#38A169' : 'var(--text-muted)') + ';">' + label + '</span>';
+  }
+
+  function checkStrength(val) {
+    var bar  = document.getElementById('strengthBar');
+    var text = document.getElementById('strengthText');
+    var rules = {
+      length:    val.length >= 8,
+      uppercase: /[A-Z]/.test(val),
+      lowercase: /[a-z]/.test(val),
+      number:    /[0-9]/.test(val),
+      symbol:    /[^a-zA-Z0-9]/.test(val)
+    };
+    setRule('rule-length',    rules.length,    '8+ characters');
+    setRule('rule-uppercase', rules.uppercase, 'One uppercase letter (A-Z)');
+    setRule('rule-lowercase', rules.lowercase, 'One lowercase letter (a-z)');
+    setRule('rule-number',    rules.number,    'One number (0-9)');
+    setRule('rule-symbol',    rules.symbol,    'One symbol (!@#$%...)');
+    var passed = Object.values(rules).filter(Boolean).length;
+    if (!val) { bar.style.width='0%'; bar.style.background='var(--border)'; text.textContent=''; text.className='field-msg hint'; return; }
+    var levels = [
+      { pct:'20%', color:'#E53E3E', label:'Very Weak' },
+      { pct:'40%', color:'#DD6B20', label:'Weak' },
+      { pct:'60%', color:'#D69E2E', label:'Fair' },
+      { pct:'80%', color:'#68D391', label:'Good' },
+      { pct:'100%',color:'#38A169', label:'Strong \u2713' }
+    ];
+    var lvl = levels[passed - 1] || levels[0];
+    bar.style.width = lvl.pct; bar.style.background = lvl.color;
+    text.textContent = lvl.label; text.style.color = lvl.color;
+    text.className = 'field-msg ' + (passed >= 4 ? 'ok' : passed >= 2 ? 'hint' : 'err');
+  }
+
+  function validatePassword(force) {
+    var val = document.getElementById('passwordField').value;
+    if (!val && !force) return;
+    var allMet = val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val);
+    if (!val || !allMet) setFieldState('wrap-password','vi-password','vic-password','strengthText','invalid', null);
+    else setFieldState('wrap-password','vi-password','vic-password','strengthText','valid', null);
+  }
+
+  function validateConfirm(force) {
+    var pwd = document.getElementById('passwordField').value;
+    var val = document.getElementById('confirmField').value;
+    var msg = document.getElementById('msg-confirm');
+    if (!val && !force) { msg.textContent = 'Re-enter your password to confirm.'; msg.className = 'field-msg hint'; return; }
+    if (!val) return setFieldState('wrap-confirm','vi-confirm','vic-confirm','msg-confirm','invalid','Please confirm your password.');
+    if (val !== pwd) return setFieldState('wrap-confirm','vi-confirm','vic-confirm','msg-confirm','invalid','\u2717 Passwords do not match.');
+    setFieldState('wrap-confirm','vi-confirm','vic-confirm','msg-confirm','valid','\u2713 Passwords match.');
+  }
+
+  function togglePass(id, iconId) {
+    var input = document.getElementById(id);
+    var icon  = document.getElementById(iconId);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('bi-eye');
+    icon.classList.toggle('bi-eye-slash');
+  }
+
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    validateFullName(true); validateUsername(true); validatePhone(true);
+    validateEmail(true); validateLocation(true); validatePassword(true); validateConfirm(true);
+    var invalid = document.querySelectorAll('.field-wrap.is-invalid');
+    if (invalid.length > 0) {
+      e.preventDefault();
+      document.getElementById('formErr').style.display = 'block';
+      var card = document.querySelector('.auth-card');
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+      invalid[0].scrollIntoView({ behavior:'smooth', block:'center' });
+      var inp = invalid[0].querySelector('input');
+      if (inp) setTimeout(function(){ inp.focus(); }, 300);
+      return;
+    }
+    document.getElementById('formErr').style.display = 'none';
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+  });
+</script>
+` %>

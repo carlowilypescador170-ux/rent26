@@ -1,0 +1,114 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'My Rentals' %>
+
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h1><i class="bi bi-box-seam me-2" style="font-size:28px;"></i>My Rentals</h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,0.6);">Home</a></li>
+            <li class="breadcrumb-item"><a href="/user/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+            <li class="breadcrumb-item active">My Rentals</li>
+          </ol>
+        </nav>
+      </div>
+      <a href="/user/rentals/new" class="btn btn-gold">
+        <i class="bi bi-plus-circle me-2"></i>New Rental
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+
+  <!-- Filter Tabs -->
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <% const statuses = ['all','pending','approved','active','completed','cancelled','rejected']; %>
+    <% statuses.forEach(s => { %>
+      <a href="/user/rentals?status=<%= s %>"
+        class="btn btn-sm <%= (currentStatus || 'all') === s ? 'btn-maroon' : 'btn-outline-maroon' %>"
+        style="font-size:12px;text-transform:capitalize;">
+        <%= s === 'all' ? 'All Rentals' : s %>
+      </a>
+    <% }) %>
+  </div>
+
+  <% if (rentals && rentals.length > 0) { %>
+    <div class="row g-3">
+      <% rentals.forEach(rental => { %>
+        <div class="col-12">
+          <div class="jm-card">
+            <div class="jm-card-body">
+              <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                <div>
+                  <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <span class="ref-num" style="font-size:14px;"><%= rental.referenceNumber %></span>
+                    <span class="status-badge status-<%= rental.status %>"><%= rental.status %></span>
+                    <% if (rental.paymentStatus === 'unpaid') { %>
+                      <span class="status-badge" style="background:#FEF3C7;color:#92400E;">unpaid</span>
+                    <% } else if (rental.paymentStatus === 'paid') { %>
+                      <span class="status-badge" style="background:#D1FAE5;color:#065F46;">paid</span>
+                    <% } %>
+                  </div>
+                  <div class="mt-2 d-flex flex-wrap gap-3" style="font-size:13px;color:var(--text-muted);">
+                    <span><i class="bi bi-calendar3 me-1"></i><%= new Date(rental.rentalStartDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) %> – <%= new Date(rental.rentalEndDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) %></span>
+                    <span><i class="bi bi-clock me-1"></i><%= rental.numberOfDays %> day(s)</span>
+                    <span><i class="bi bi-box me-1"></i><%= rental.items.length %> item type(s)</span>
+                    <span><i class="bi bi-geo-alt me-1"></i><%= rental.deliveryAddress %></span>
+                  </div>
+
+                  <!-- Item summary pills -->
+                  <div class="mt-2 d-flex flex-wrap gap-2">
+                    <% rental.items.forEach(i => { %>
+                      <span style="background:var(--maroon-pale);color:var(--maroon);font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;">
+                        <%= i.quantity %>× <%= i.itemType.replace('_',' ') %>
+                      </span>
+                    <% }) %>
+                  </div>
+                </div>
+
+                <div class="text-end">
+                  <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--maroon);font-weight:700;">₱<%= rental.totalCost.toLocaleString() %></div>
+                  <div style="font-size:11px;color:var(--text-muted);">total cost</div>
+                  <a href="/user/rentals/<%= rental._id %>" class="btn btn-maroon btn-sm mt-2">
+                    <i class="bi bi-eye me-1"></i>View Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          <% for (let p = 1; p <= totalPages; p++) { %>
+            <li class="page-item <%= p === currentPage ? 'active' : '' %>">
+              <a class="page-link" href="?page=<%= p %>&status=<%= currentStatus || 'all' %>"
+                style="<%= p === currentPage ? 'background:var(--maroon);border-color:var(--maroon);' : 'color:var(--maroon);border-color:var(--border);' %>">
+                <%= p %>
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    <% } %>
+
+  <% } else { %>
+    <div class="text-center py-5">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--maroon-pale);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class="bi bi-box-seam" style="font-size:36px;color:var(--maroon);opacity:0.4;"></i>
+      </div>
+      <h4 class="font-display" style="color:var(--maroon);">No rentals found</h4>
+      <p style="color:var(--text-muted);font-size:14px;">You haven't made any rental requests yet.</p>
+      <a href="/user/rentals/new" class="btn btn-maroon">
+        <i class="bi bi-plus-circle me-2"></i>Create Your First Rental
+      </a>
+    </div>
+  <% } %>
+</div>

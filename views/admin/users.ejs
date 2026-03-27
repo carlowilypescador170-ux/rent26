@@ -1,0 +1,115 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'Manage Users' %>
+
+<div class="page-header">
+  <div class="container-fluid px-4">
+    <h1><i class="bi bi-people me-2" style="font-size:28px;"></i>Customer Accounts</h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+        <li class="breadcrumb-item active">Users</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Search -->
+  <div class="jm-card mb-4">
+    <div class="jm-card-body">
+      <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label">Search</label>
+          <input type="text" name="search" class="form-control" placeholder="Name, username, email or phone..." value="<%= search || '' %>" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All</option>
+            <option value="active"   <%= currentStatus === 'active'   ? 'selected' : '' %>>Active</option>
+            <option value="inactive" <%= currentStatus === 'inactive' ? 'selected' : '' %>>Deactivated</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-maroon w-100"><i class="bi bi-search me-2"></i>Search</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="jm-card">
+    <div class="jm-card-body p-0">
+      <div class="table-responsive">
+        <table class="jm-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Contact</th>
+              <th>Location</th>
+              <th>Rentals</th>
+              <th>Joined</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (users && users.length > 0) { %>
+              <% users.forEach(u => { %>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--maroon),var(--maroon-lt));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:15px;flex-shrink:0;">
+                        <%= u.fullName.charAt(0).toUpperCase() %>
+                      </div>
+                      <div>
+                        <div style="font-size:14px;font-weight:500;"><%= u.fullName %></div>
+                        <div class="font-mono" style="font-size:11px;color:var(--text-muted);">@<%= u.username %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="font-size:13px;">
+                    <div><%= u.email %></div>
+                    <div style="color:var(--text-muted);"><%= u.phoneNumber %></div>
+                  </td>
+                  <td style="font-size:13px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= u.location %>"><%= u.location %></td>
+                  <td class="font-mono" style="text-align:center;"><%= u.rentalCount || 0 %></td>
+                  <td style="font-size:13px;color:var(--text-muted);"><%= new Date(u.createdAt).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) %></td>
+                  <td>
+                    <span class="status-badge <%= u.isActive ? 'status-approved' : 'status-cancelled' %>">
+                      <%= u.isActive ? 'active' : 'inactive' %>
+                    </span>
+                  </td>
+                  <td>
+                    <form action="/admin/users/<%= u._id %>/toggle" method="POST">
+                      <button type="submit" class="btn btn-sm" style="font-size:11px;background:<%= u.isActive ? '#FEE2E2' : '#D1FAE5' %>;color:<%= u.isActive ? '#991B1B' : '#065F46' %>;" title="<%= u.isActive ? 'Deactivate' : 'Reactivate' %>">
+                        <i class="bi bi-<%= u.isActive ? 'person-x' : 'person-check' %> me-1"></i>
+                        <%= u.isActive ? 'Deactivate' : 'Reactivate' %>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="7" class="text-center py-4" style="color:var(--text-muted);">No customers found.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+    <nav class="mt-3">
+      <ul class="pagination justify-content-center">
+        <% for (let p = 1; p <= totalPages; p++) { %>
+          <li class="page-item <%= p === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= p %>&search=<%= search||'' %>"
+              style="<%= p === currentPage ? 'background:var(--maroon);border-color:var(--maroon);' : 'color:var(--maroon);' %>"><%= p %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
+</div>

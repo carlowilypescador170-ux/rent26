@@ -1,0 +1,121 @@
+<% layout('layouts/boilerplate') %>
+<% const isEdit = typeof item !== 'undefined' && item %>
+<% pageTitle = isEdit ? 'Edit ' + item.displayName : 'Add New Item' %>
+
+<div class="page-header">
+  <div class="container-fluid px-4">
+    <h1><i class="bi bi-<%= isEdit ? 'pencil-square' : 'plus-circle' %> me-2" style="font-size:26px;"></i><%= isEdit ? 'Edit Item' : 'Add New Item' %></h1>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/admin/items" style="color:rgba(255,255,255,0.6);">Items</a></li>
+        <li class="breadcrumb-item active"><%= isEdit ? 'Edit' : 'New' %></li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="jm-card">
+        <div class="jm-card-header"><h5><i class="bi bi-box me-2"></i>Item Details</h5></div>
+        <div class="jm-card-body">
+          <form action="<%= isEdit ? '/admin/items/' + item._id + '?_method=PUT' : '/admin/items' %>" method="POST" enctype="multipart/form-data">
+
+            <div class="row g-3">
+
+              <div class="col-md-6">
+                <label class="form-label">Item Type <span class="text-danger">*</span></label>
+                <select name="name" class="form-select" required>
+                  <option value="">— Select type —</option>
+                  <% const types = [
+                    {val:'chair',     label:'Chair'},
+                    {val:'table',     label:'Round Table'},
+                    {val:'long_table',label:'Long Table'},
+                    {val:'videoke',   label:'Videoke Machine'},
+                  ] %>
+                  <% types.forEach(t => { %>
+                    <option value="<%= t.val %>" <%= isEdit && item.name === t.val ? 'selected' : '' %>><%= t.label %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Display Name <span class="text-danger">*</span></label>
+                <input type="text" name="displayName" class="form-control"
+                  placeholder="e.g. Monobloc Chair White"
+                  value="<%= isEdit ? item.displayName : '' %>" required />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Price Per Day (₱) <span class="text-danger">*</span></label>
+                <input type="number" name="pricePerDay" class="form-control"
+                  step="0.01" min="0"
+                  value="<%= isEdit ? item.pricePerDay : '' %>" required />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Total Quantity <span class="text-danger">*</span></label>
+                <input type="number" name="quantity" class="form-control"
+                  min="0" value="<%= isEdit ? item.quantity : 1 %>" required />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Unit</label>
+                <select name="unit" class="form-select">
+                  <% ['piece','set','unit'].forEach(u => { %>
+                    <option value="<%= u %>" <%= isEdit && item.unit === u ? 'selected' : '' %>><%= u.charAt(0).toUpperCase()+u.slice(1) %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3"
+                  placeholder="Optional description of the item..."><%= isEdit ? (item.description || '') : '' %></textarea>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Images <span style="font-weight:400;color:var(--text-muted);">(up to 5)</span></label>
+                <input type="file" name="images" class="form-control" accept="image/*" multiple />
+                <% if (isEdit && item.images && item.images.length > 0) { %>
+                  <div class="d-flex gap-2 flex-wrap mt-2">
+                    <% item.images.forEach(img => { %>
+                      <img src="<%= img %>" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid var(--border);" />
+                    <% }) %>
+                  </div>
+                  <div class="form-text" style="font-size:11px;">Upload new images to replace existing ones.</div>
+                <% } %>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Notes</label>
+                <input type="text" name="notes" class="form-control"
+                  placeholder="Internal notes (optional)"
+                  value="<%= isEdit ? (item.notes || '') : '' %>" />
+              </div>
+
+              <% if (isEdit) { %>
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="isAvailable" id="isAvailable" <%= item.isAvailable ? 'checked' : '' %> style="width:42px;height:22px;" />
+                    <label class="form-check-label" for="isAvailable" style="margin-left:8px;">Item is available for rental</label>
+                  </div>
+                </div>
+              <% } %>
+
+            </div>
+
+            <div class="d-flex gap-3 mt-4">
+              <button type="submit" class="btn btn-maroon">
+                <i class="bi bi-<%= isEdit ? 'check-circle' : 'plus-circle' %> me-2"></i><%= isEdit ? 'Save Changes' : 'Add Item' %>
+              </button>
+              <a href="/admin/items" class="btn btn-outline-maroon">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

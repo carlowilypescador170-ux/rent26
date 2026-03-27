@@ -1,0 +1,255 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'Welcome' %>
+
+<style>
+  .hero {
+    min-height: calc(100vh - 62px);
+    background: linear-gradient(135deg, var(--maroon-dk) 0%, var(--maroon) 55%, #A03050 100%);
+    display: flex; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(201,150,58,0.15) 0%, transparent 50%),
+      repeating-linear-gradient(45deg, transparent, transparent 60px, rgba(255,255,255,0.015) 60px, rgba(255,255,255,0.015) 61px);
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(201,150,58,0.15);
+    border: 1px solid rgba(201,150,58,0.4);
+    color: var(--gold-lt); padding: 6px 16px; border-radius: 30px;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 20px; font-family: 'DM Mono', monospace;
+    animation: fadeInDown 0.6s ease both;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(38px, 6vw, 72px);
+    font-weight: 900; color: white; line-height: 1.1;
+    margin-bottom: 20px;
+    animation: fadeInUp 0.7s ease 0.1s both;
+  }
+  .hero h1 em { color: var(--gold-lt); font-style: normal; }
+  .hero p {
+    font-size: 17px; color: rgba(255,255,255,0.72);
+    max-width: 520px; line-height: 1.8;
+    animation: fadeInUp 0.7s ease 0.2s both;
+  }
+  .hero-actions { animation: fadeInUp 0.7s ease 0.3s both; }
+  .hero-float {
+    position: absolute; right: 5%; top: 50%;
+    transform: translateY(-50%);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    animation: fadeInRight 0.8s ease 0.3s both;
+  }
+  .hero-float-card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 14px; padding: 24px 20px;
+    text-align: center; min-width: 130px;
+    transition: var(--transition);
+  }
+  .hero-float-card:hover { background: rgba(255,255,255,0.12); transform: translateY(-4px); }
+  .hero-float-card .icon { font-size: 32px; margin-bottom: 10px; }
+  .hero-float-card .label { color: rgba(255,255,255,0.75); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .hero-float-card .price { color: var(--gold-lt); font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
+
+  .section-tag { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-weight: 700; font-family: 'DM Mono', monospace; }
+
+  .item-card {
+    background: white; border-radius: 16px;
+    border: 1px solid var(--border-lt);
+    padding: 28px 24px; text-align: center;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+  }
+  .item-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-6px); }
+  .item-card .item-icon {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: linear-gradient(135deg, var(--maroon), var(--maroon-lt));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px; margin: 0 auto 16px;
+    box-shadow: 0 6px 20px rgba(123,28,46,0.25);
+    transition: var(--transition);
+  }
+  .item-card:hover .item-icon { transform: scale(1.08) rotate(-3deg); }
+  .item-card .item-name { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 6px; }
+  .item-card .item-price { font-family: 'DM Mono', monospace; font-size: 22px; color: var(--maroon); font-weight: 500; }
+  .item-card .item-unit { font-size: 12px; color: var(--text-muted); }
+
+  .how-step {
+    display: flex; gap: 20px; align-items: flex-start; margin-bottom: 28px;
+  }
+  .step-num {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--maroon), var(--maroon-lt));
+    color: white; font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(123,28,46,0.25);
+  }
+  .step-content h5 { font-family: 'Playfair Display', serif; font-size: 17px; margin-bottom: 4px; color: var(--text-dark); }
+  .step-content p { font-size: 13.5px; color: var(--text-muted); margin: 0; line-height: 1.6; }
+
+  @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeInUp   { from { opacity:0; transform:translateY(24px);  } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeInRight{ from { opacity:0; transform:translateX(40px);  } to { opacity:1; transform:translateX(0); } }
+</style>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container position-relative" style="z-index:1;">
+    <div class="row">
+      <div class="col-lg-7 py-5">
+        <div class="hero-badge"><i class="bi bi-star-fill"></i>Trusted Event Rental</div>
+        <h1>Rent Chairs, Tables<br>&amp; <em>Videoke</em> Online</h1>
+        <p>Book everything you need for your next event — parties, reunions, celebrations — all in one place. Fast, easy, and delivered to your door.</p>
+        <div class="hero-actions d-flex flex-wrap gap-3 mt-4">
+          <% if (currentUser) { %>
+            <a href="/user/rentals/new" class="btn btn-gold btn-lg">
+              <i class="bi bi-plus-circle me-2"></i>Book Now
+            </a>
+            <a href="/user/dashboard" class="btn btn-outline-light btn-lg" style="border-color:rgba(255,255,255,0.4);">
+              My Dashboard
+            </a>
+          <% } else { %>
+            <a href="/auth/register" class="btn btn-gold btn-lg">
+              <i class="bi bi-person-plus me-2"></i>Get Started
+            </a>
+            <a href="/auth/login" class="btn btn-outline-light btn-lg" style="border-color:rgba(255,255,255,0.4);">
+              Log In
+            </a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating price cards (desktop) -->
+  <div class="hero-float d-none d-xl-grid">
+    <div class="hero-float-card">
+      <div class="icon">🪑</div>
+      <div class="price">₱7</div>
+      <div class="label">per Chair</div>
+    </div>
+    <div class="hero-float-card">
+      <div class="icon">🔵</div>
+      <div class="price">₱50</div>
+      <div class="label">per Table</div>
+    </div>
+    <div class="hero-float-card">
+      <div class="icon">📏</div>
+      <div class="price">₱100</div>
+      <div class="label">Long Table</div>
+    </div>
+    <div class="hero-float-card">
+      <div class="icon">🎤</div>
+      <div class="price">₱400</div>
+      <div class="label">Videoke/Day</div>
+    </div>
+  </div>
+</section>
+
+<!-- ITEMS SECTION -->
+<section class="py-5" id="items" style="background:var(--cream);">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-tag mb-2">What We Offer</div>
+      <h2 class="font-display" style="font-size:clamp(28px,4vw,40px);color:var(--maroon);">Our Rental Items</h2>
+      <hr class="divider-gold mx-auto mt-3">
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-6 col-md-3">
+        <div class="item-card">
+          <div class="item-icon">🪑</div>
+          <div class="item-name">Monobloc Chair</div>
+          <div class="item-price">₱7.00</div>
+          <div class="item-unit">per chair / per day</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="item-card">
+          <div class="item-icon">🔵</div>
+          <div class="item-name">Round Table</div>
+          <div class="item-price">₱50.00</div>
+          <div class="item-unit">per table / per day</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="item-card">
+          <div class="item-icon">📏</div>
+          <div class="item-name">Long Table</div>
+          <div class="item-price">₱100.00</div>
+          <div class="item-unit">per table / per day</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="item-card" style="border: 2px solid var(--gold); position:relative;">
+          <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--maroon-dk);font-size:10px;font-weight:700;padding:2px 12px;border-radius:10px;letter-spacing:1px;font-family:'DM Mono',monospace;">POPULAR</span>
+          <div class="item-icon" style="background:linear-gradient(135deg,var(--gold),var(--gold-lt));">🎤</div>
+          <div class="item-name">Videoke Machine</div>
+          <div class="item-price" style="color:var(--gold);">₱400.00</div>
+          <div class="item-unit">per unit / per day</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-5" style="background:white;">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <div class="section-tag mb-2">Simple Process</div>
+        <h2 class="font-display" style="font-size:clamp(26px,3.5vw,38px);color:var(--maroon);margin-bottom:8px;">How It Works</h2>
+        <hr class="divider-gold mt-3 mb-4">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <div class="step-content"><h5>Create an Account</h5><p>Register with your full name, contact details, and address. Quick and free.</p></div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <div class="step-content"><h5>Submit a Rental Request</h5><p>Choose your items, set the dates, and submit your booking online.</p></div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <div class="step-content"><h5>Wait for Approval</h5><p>Our admin reviews and approves your request — you'll be notified right away.</p></div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">4</div>
+          <div class="step-content"><h5>Enjoy Your Event!</h5><p>Items are delivered and ready for your big day. Need more days? Extend anytime.</p></div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div style="background:linear-gradient(135deg,var(--maroon-dk),var(--maroon));border-radius:20px;padding:40px;color:white;position:relative;overflow:hidden;box-shadow:var(--shadow-lg);">
+          <div style="position:absolute;top:-30px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(201,150,58,0.12);"></div>
+          <h3 class="font-display" style="font-size:26px;margin-bottom:20px;">Ready to Book?</h3>
+          <p style="color:rgba(255,255,255,0.75);font-size:15px;margin-bottom:28px;">
+            Join hundreds of happy customers who trust J&M Rentals for their events. Register today and book in minutes.
+          </p>
+          <div class="row g-3 mb-28" style="margin-bottom:28px;">
+            <div class="col-6">
+              <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:16px;">
+                <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--gold-lt);font-weight:700;">100%</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;">Online Booking</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:16px;">
+                <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--gold-lt);font-weight:700;">Fast</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;">Admin Approval</div>
+              </div>
+            </div>
+          </div>
+          <a href="/auth/register" class="btn btn-gold">
+            <i class="bi bi-person-plus me-2"></i>Create Free Account
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

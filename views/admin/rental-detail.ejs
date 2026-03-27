@@ -1,0 +1,228 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = rental.referenceNumber + ' — Admin' %>
+
+<div class="page-header">
+  <div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1><i class="bi bi-file-earmark-text me-2" style="font-size:26px;"></i><%= rental.referenceNumber %></h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/admin/rentals" style="color:rgba(255,255,255,0.6);">Rentals</a></li>
+            <li class="breadcrumb-item active">Details</li>
+          </ol>
+        </nav>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <span class="status-badge status-<%= rental.status %>" style="font-size:13px;padding:8px 16px;"><%= rental.status %></span>
+        <span class="status-badge <%= rental.paymentStatus==='paid'?'status-approved':'status-pending' %>" style="font-size:13px;padding:8px 16px;"><%= rental.paymentStatus %></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4">
+  <div class="row g-4">
+
+    <div class="col-xl-8">
+
+      <!-- Customer Info -->
+      <div class="jm-card mb-4">
+        <div class="jm-card-header"><h5><i class="bi bi-person me-2"></i>Customer Details</h5></div>
+        <div class="jm-card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Full Name</div>
+              <div style="font-weight:600;font-size:15px;"><%= rental.customer.fullName %></div>
+            </div>
+            <div class="col-md-6">
+              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Username</div>
+              <div class="font-mono">@<%= rental.customer.username %></div>
+            </div>
+            <div class="col-md-6">
+              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Email</div>
+              <div><a href="mailto:<%= rental.customer.email %>" style="color:var(--maroon);"><%= rental.customer.email %></a></div>
+            </div>
+            <div class="col-md-6">
+              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Phone</div>
+              <div><a href="tel:<%= rental.customer.phoneNumber %>" style="color:var(--maroon);"><%= rental.customer.phoneNumber %></a></div>
+            </div>
+            <div class="col-12">
+              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Delivery Address</div>
+              <div><i class="bi bi-geo-alt me-1" style="color:var(--maroon);"></i><%= rental.deliveryAddress %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="jm-card mb-4">
+        <div class="jm-card-header"><h5><i class="bi bi-box-seam me-2"></i>Rented Items</h5></div>
+        <div class="jm-card-body p-0">
+          <table class="jm-table">
+            <thead><tr><th>Item</th><th>Qty</th><th>Price/Day</th><th>Days</th><th>Subtotal</th></tr></thead>
+            <tbody>
+              <% rental.items.forEach(i => { %>
+                <tr>
+                  <td><%= i.itemType.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase()) %></td>
+                  <td class="font-mono"><%= i.quantity %></td>
+                  <td class="font-mono">₱<%= i.pricePerDay.toFixed(2) %></td>
+                  <td class="font-mono"><%= rental.numberOfDays %></td>
+                  <td class="font-mono" style="font-weight:700;color:var(--maroon);">₱<%= i.subtotal.toLocaleString('en-PH',{minimumFractionDigits:2}) %></td>
+                </tr>
+              <% }) %>
+              <tr style="background:var(--maroon-pale);">
+                <td colspan="4" style="font-weight:700;text-align:right;padding-right:16px;">TOTAL</td>
+                <td class="font-mono" style="font-weight:700;color:var(--maroon);font-size:16px;">₱<%= rental.totalCost.toLocaleString('en-PH',{minimumFractionDigits:2}) %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin Actions -->
+      <div class="jm-card">
+        <div class="jm-card-header"><h5><i class="bi bi-gear me-2"></i>Admin Actions</h5></div>
+        <div class="jm-card-body">
+          <div class="d-flex flex-wrap gap-3">
+
+            <% if (rental.status === 'pending') { %>
+              <form action="/admin/rentals/<%= rental._id %>/approve" method="POST">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Approve Rental</button>
+              </form>
+              <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                <i class="bi bi-x-circle me-2"></i>Reject Rental
+              </button>
+            <% } %>
+
+            <% if (rental.status === 'approved') { %>
+              <form action="/admin/rentals/<%= rental._id %>/activate" method="POST">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-play-circle me-2"></i>Mark as Active</button>
+              </form>
+            <% } %>
+
+            <% if (rental.status === 'active') { %>
+              <form action="/admin/rentals/<%= rental._id %>/complete" method="POST">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check2-all me-2"></i>Mark Completed</button>
+              </form>
+            <% } %>
+
+            <!-- Payment Update -->
+            <% if (!['cancelled','rejected'].includes(rental.status)) { %>
+              <button class="btn btn-gold" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                <i class="bi bi-cash-coin me-2"></i>Update Payment
+              </button>
+            <% } %>
+
+            <a href="/admin/rentals" class="btn btn-outline-maroon"><i class="bi bi-arrow-left me-2"></i>Back</a>
+          </div>
+
+          <% if (rental.rejectionReason) { %>
+            <div class="mt-3 p-3 rounded-3" style="background:#FEE2E2;border:1px solid #FECACA;font-size:13.5px;color:#991B1B;">
+              <i class="bi bi-exclamation-triangle me-1"></i><strong>Rejection reason:</strong> <%= rental.rejectionReason %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-xl-4">
+      <div class="jm-card">
+        <div class="jm-card-header"><h5><i class="bi bi-receipt me-2"></i>Summary</h5></div>
+        <div class="jm-card-body" style="font-size:14px;">
+          <% const rows = [
+            ['Reference', rental.referenceNumber, true],
+            ['Start Date', new Date(rental.rentalStartDate).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}), false],
+            ['End Date',   new Date(rental.rentalEndDate).toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'}), false],
+            ['Total Days', rental.numberOfDays + ' day(s)', true],
+            ['Base Cost',  '₱' + rental.baseCost.toLocaleString('en-PH',{minimumFractionDigits:2}), true],
+          ] %>
+          <% rows.forEach(([label, val, mono]) => { %>
+            <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);">
+              <span style="color:var(--text-muted);"><%= label %></span>
+              <span class="<%= mono ? 'font-mono' : '' %>" style="font-size:13px;"><%= val %></span>
+            </div>
+          <% }) %>
+          <% if (rental.extensionCost > 0) { %>
+            <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);">
+              <span style="color:var(--text-muted);">Extension Cost</span>
+              <span class="font-mono">₱<%= rental.extensionCost.toLocaleString('en-PH',{minimumFractionDigits:2}) %></span>
+            </div>
+          <% } %>
+          <div class="d-flex justify-content-between pt-3">
+            <span style="font-family:'Playfair Display',serif;font-size:18px;color:var(--maroon);">Total</span>
+            <span style="font-family:'Playfair Display',serif;font-size:24px;color:var(--maroon);font-weight:700;">₱<%= rental.totalCost.toLocaleString('en-PH',{minimumFractionDigits:2}) %></span>
+          </div>
+        </div>
+      </div>
+
+      <% if (rental.notes) { %>
+        <div class="jm-card mt-3">
+          <div class="jm-card-header"><h5><i class="bi bi-chat-left-text me-2"></i>Customer Notes</h5></div>
+          <div class="jm-card-body" style="font-size:14px;color:var(--text-muted);"><%= rental.notes %></div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#991B1B,#B91C1C);color:white;border:none;">
+        <h5 class="modal-title font-display">Reject Rental</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/admin/rentals/<%= rental._id %>/reject" method="POST">
+        <div class="modal-body p-4">
+          <label class="form-label">Reason <span class="text-danger">*</span></label>
+          <textarea name="rejectionReason" class="form-control" rows="3" required placeholder="Reason for rejection..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-maroon" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header jm-card-header">
+        <h5 class="modal-title font-display"><i class="bi bi-cash-coin me-2"></i>Update Payment</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/admin/rentals/<%= rental._id %>/payment" method="POST">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label">Payment Status</label>
+            <select name="paymentStatus" class="form-select" required>
+              <% ['unpaid','partial','paid'].forEach(s => { %>
+                <option value="<%= s %>" <%= rental.paymentStatus === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Payment Method</label>
+            <select name="paymentMethod" class="form-select">
+              <option value="">— Select —</option>
+              <% ['cash','gcash','bank_transfer','other'].forEach(m => { %>
+                <option value="<%= m %>" <%= rental.paymentMethod === m ? 'selected' : '' %>><%= m.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase()) %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-maroon" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-maroon">Save Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

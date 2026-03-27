@@ -1,0 +1,88 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = 'Manage Items' %>
+
+<div class="container-fluid px-4 py-4">
+  <div class="row g-4">
+
+    <% if (items && items.length > 0) { %>
+      <% items.forEach(item => { %>
+
+        <div class="col-md-6 col-xl-3">
+          <div class="jm-card h-100">
+
+            <!-- Image -->
+            <% if (item.images && item.images.length > 0) { %>
+              <img src="<%= item.images[0] %>" style="width:100%;height:160px;object-fit:cover;" />
+            <% } else { %>
+              <div style="height:120px;background:linear-gradient(135deg,#800000,#a00000);display:flex;align-items:center;justify-content:center;font-size:54px;">
+                🪑
+              </div>
+            <% } %>
+
+            <div class="jm-card-body">
+
+              <h5><%= item.displayName %></h5>
+
+              <!-- 🔥 FIX: prevent crash if price is missing -->
+              <p>
+                ₱<%= (item.pricePerDay || 0).toFixed(2) %> / day
+              </p>
+
+              <p>Stock: <%= item.availableQuantity %> / <%= item.quantity %></p>
+
+              <div class="d-flex gap-2">
+
+                <!-- EDIT -->
+                <a href="/admin/items/<%= item._id %>/edit" class="btn btn-sm btn-primary">
+                  Edit
+                </a>
+
+                <!-- DELETE -->
+              <button 
+  type="button" 
+  class="btn btn-sm btn-danger" 
+  data-id="<%= item._id %>">
+  Delete
+</button>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      <% }) %>
+    <% } else { %>
+
+      <h3>No items yet</h3>
+
+    <% } %>
+   
+<script>
+  document.querySelectorAll('.btn-danger').forEach(button => {
+    button.addEventListener('click', async function () {
+      const itemId = this.dataset.id;
+      const confirmed = confirm('Delete this item?');
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/admin/delete/${itemId}`, {
+          method: 'POST',
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/admin/items'; // client handles the redirect
+        } else {
+          alert('Failed to delete item.');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Something went wrong.');
+      }
+    });
+  });
+</script>
+  </div>
+</div>

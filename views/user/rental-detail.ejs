@@ -1,0 +1,192 @@
+<% layout('layouts/boilerplate') %>
+<% pageTitle = rental.referenceNumber %>
+
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1><i class="bi bi-file-earmark-text me-2" style="font-size:26px;"></i><%= rental.referenceNumber %></h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/user/dashboard" style="color:rgba(255,255,255,0.6);">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/user/rentals" style="color:rgba(255,255,255,0.6);">My Rentals</a></li>
+            <li class="breadcrumb-item active">Details</li>
+          </ol>
+        </nav>
+      </div>
+      <span class="status-badge status-<%= rental.status %>" style="font-size:13px;padding:8px 16px;"><%= rental.status %></span>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="row g-4">
+
+    <!-- Main Details -->
+    <div class="col-lg-8">
+
+      <!-- Items rented -->
+      <div class="jm-card mb-4">
+        <div class="jm-card-header"><h5><i class="bi bi-box-seam me-2"></i>Items Rented</h5></div>
+        <div class="jm-card-body p-0">
+          <table class="jm-table">
+            <thead><tr><th>Item</th><th>Qty</th><th>Price/Day</th><th>Days</th><th>Subtotal</th></tr></thead>
+            <tbody>
+              <% rental.items.forEach(i => { %>
+                <tr>
+                  <td>
+                    <span style="font-size:18px;margin-right:8px;">
+                      <% if(i.itemType==='chair') { %>🪑<% } else if(i.itemType==='table') { %>🔵<% } else if(i.itemType==='long_table') { %>📏<% } else { %>🎤<% } %>
+                    </span>
+                    <%= i.itemType.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase()) %>
+                  </td>
+                  <td class="font-mono"><%= i.quantity %></td>
+                  <td class="font-mono">₱<%= i.pricePerDay.toFixed(2) %></td>
+                  <td class="font-mono"><%= rental.numberOfDays %></td>
+                  <td class="font-mono" style="font-weight:700;color:var(--maroon);">₱<%= i.subtotal.toLocaleString('en-PH',{minimumFractionDigits:2}) %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Extensions -->
+      <% if (rental.extensions && rental.extensions.length > 0) { %>
+        <div class="jm-card mb-4">
+          <div class="jm-card-header"><h5><i class="bi bi-clock-history me-2"></i>Extensions</h5></div>
+          <div class="jm-card-body p-0">
+            <table class="jm-table">
+              <thead><tr><th>Date</th><th>Additional Days</th><th>Additional Cost</th><th>Approved By</th></tr></thead>
+              <tbody>
+                <% rental.extensions.forEach(ext => { %>
+                  <tr>
+                    <td><%= new Date(ext.extendedAt).toLocaleDateString('en-PH') %></td>
+                    <td class="font-mono">+<%= ext.additionalDays %> day(s)</td>
+                    <td class="font-mono" style="color:var(--maroon);">₱<%= ext.additionalCost.toLocaleString() %></td>
+                    <td style="font-size:13px;color:var(--text-muted);"><%= ext.approvedBy ? ext.approvedBy.fullName : 'Pending' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Actions -->
+      <div class="d-flex flex-wrap gap-3">
+        <% if (rental.status === 'pending') { %>
+          <form action="/user/rentals/<%= rental._id %>/cancel" method="POST"
+            onsubmit="return confirm('Are you sure you want to cancel this rental?')">
+            <button type="submit" class="btn btn-outline-danger">
+              <i class="bi bi-x-circle me-2"></i>Cancel Request
+            </button>
+          </form>
+        <% } %>
+        <% if (['approved','active'].includes(rental.status)) { %>
+          <button class="btn btn-gold" data-bs-toggle="modal" data-bs-target="#extendModal">
+            <i class="bi bi-calendar-plus me-2"></i>Request Extension (+₱400/day)
+          </button>
+        <% } %>
+        <a href="/user/rentals" class="btn btn-outline-maroon">
+          <i class="bi bi-arrow-left me-2"></i>Back to Rentals
+        </a>
+      </div>
+    </div>
+
+    <!-- Sidebar Summary -->
+    <div class="col-lg-4">
+      <div class="jm-card mb-3">
+        <div class="jm-card-header"><h5><i class="bi bi-receipt me-2"></i>Rental Summary</h5></div>
+        <div class="jm-card-body">
+          <div class="cost-row d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);font-size:14px;">
+            <span style="color:var(--text-muted);">Start Date</span>
+            <span class="font-mono" style="font-size:13px;"><%= new Date(rental.rentalStartDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) %></span>
+          </div>
+          <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);font-size:14px;">
+            <span style="color:var(--text-muted);">End Date</span>
+            <span class="font-mono" style="font-size:13px;"><%= new Date(rental.rentalEndDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) %></span>
+          </div>
+          <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);font-size:14px;">
+            <span style="color:var(--text-muted);">Total Days</span>
+            <span class="font-mono"><%= rental.numberOfDays %></span>
+          </div>
+          <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);font-size:14px;">
+            <span style="color:var(--text-muted);">Base Cost</span>
+            <span class="font-mono">₱<%= rental.baseCost.toLocaleString('en-PH',{minimumFractionDigits:2}) %></span>
+          </div>
+          <% if (rental.extensionCost > 0) { %>
+            <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--border-lt);font-size:14px;">
+              <span style="color:var(--text-muted);">Extension Cost</span>
+              <span class="font-mono">₱<%= rental.extensionCost.toLocaleString('en-PH',{minimumFractionDigits:2}) %></span>
+            </div>
+          <% } %>
+          <div class="d-flex justify-content-between pt-3">
+            <span style="font-family:'Playfair Display',serif;font-size:18px;color:var(--maroon);">Total</span>
+            <span style="font-family:'Playfair Display',serif;font-size:24px;color:var(--maroon);font-weight:700;">₱<%= rental.totalCost.toLocaleString('en-PH',{minimumFractionDigits:2}) %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="jm-card">
+        <div class="jm-card-header"><h5><i class="bi bi-info-circle me-2"></i>Details</h5></div>
+        <div class="jm-card-body" style="font-size:13.5px;">
+          <div class="mb-2"><span style="color:var(--text-muted);">Delivery Address</span><div style="font-weight:500;margin-top:2px;"><%= rental.deliveryAddress %></div></div>
+          <div class="mb-2"><span style="color:var(--text-muted);">Payment Status</span>
+            <div><span class="status-badge <%= rental.paymentStatus === 'paid' ? 'status-completed' : 'status-pending' %>"><%= rental.paymentStatus %></span></div>
+          </div>
+          <% if (rental.paymentMethod) { %>
+            <div class="mb-2"><span style="color:var(--text-muted);">Payment Method</span><div style="font-weight:500;text-transform:capitalize;"><%= rental.paymentMethod.replace('_',' ') %></div></div>
+          <% } %>
+          <% if (rental.approvedBy) { %>
+            <div class="mb-2"><span style="color:var(--text-muted);">Approved By</span><div style="font-weight:500;"><%= rental.approvedBy.fullName %></div></div>
+          <% } %>
+          <% if (rental.rejectionReason) { %>
+            <div class="p-2 rounded-2 mt-2" style="background:#FEE2E2;font-size:13px;color:#991B1B;">
+              <i class="bi bi-exclamation-triangle me-1"></i><strong>Rejection reason:</strong> <%= rental.rejectionReason %>
+            </div>
+          <% } %>
+          <% if (rental.notes) { %>
+            <div class="mt-2 p-2 rounded-2" style="background:var(--maroon-pale);font-size:13px;"><i class="bi bi-chat-left-text me-1" style="color:var(--maroon);"></i><%= rental.notes %></div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Extension Modal -->
+<div class="modal fade" id="extendModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,var(--maroon-dk),var(--maroon));color:white;border:none;">
+        <h5 class="modal-title font-display"><i class="bi bi-calendar-plus me-2"></i>Request Extension</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/user/rentals/<%= rental._id %>/extend" method="POST">
+        <div class="modal-body p-4">
+          <p style="font-size:14px;color:var(--text-muted);">Each additional day costs <strong style="color:var(--maroon);">₱400</strong>. The admin must approve your extension request.</p>
+          <label class="form-label">Additional Days <span class="text-danger">*</span></label>
+          <input type="number" name="additionalDays" class="form-control" min="1" max="30" value="1" required oninput="updateExtCost(this.value)" />
+          <div class="mt-3 p-3 rounded-3 text-center" style="background:var(--maroon-pale);">
+            <div style="font-size:13px;color:var(--text-muted);">Additional Cost</div>
+            <div id="extCost" style="font-family:'Playfair Display',serif;font-size:28px;color:var(--maroon);font-weight:700;">₱400.00</div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-color:var(--border-lt);">
+          <button type="button" class="btn btn-outline-maroon" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-maroon"><i class="bi bi-send me-2"></i>Submit Extension Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<% extraScripts = `
+<script>
+  function updateExtCost(days) {
+    const cost = parseInt(days) * 400;
+    document.getElementById('extCost').textContent = '₱' + cost.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+  }
+</script>
+` %>
