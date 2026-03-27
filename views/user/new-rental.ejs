@@ -24,7 +24,7 @@
 
     <div class="row g-4">
 
-      <!-- LEFT: Item Selection + Dates + Address -->
+      <!-- LEFT -->
       <div class="col-lg-8">
 
         <!-- Step 1: Select Items -->
@@ -59,18 +59,14 @@
               <% items.forEach(function(item, index) { %>
                 <div class="col-6 col-md-3">
 
-                  <!-- ✅ onclick uses plain string concat, no backticks inside EJS -->
-                  <% if (item.availableQuantity > 0) { %>
-                    <div class="item-card"
-                         id="card-<%= item.name %>"
-                         onclick="toggleItem('<%= item.name %>', <%= item.pricePerDay %>, <%= item.availableQuantity %>)"
-                         style="cursor:pointer;">
-                  <% } else { %>
-                    <div class="item-card item-unavailable"
-                         id="card-<%= item.name %>"
-                         style="cursor:not-allowed;"
-                         title="Out of stock">
-                  <% } %>
+                  <%-- ✅ No onclick — data attributes carry the values, JS does the rest --%>
+                  <div class="item-card <%= item.availableQuantity === 0 ? 'item-unavailable' : '' %>"
+                       id="card-<%= item.name %>"
+                       data-item-type="<%= item.name %>"
+                       data-price="<%= item.pricePerDay %>"
+                       data-max-qty="<%= item.availableQuantity %>"
+                       style="cursor:<%= item.availableQuantity > 0 ? 'pointer' : 'not-allowed' %>;"
+                       <% if (item.availableQuantity === 0) { %>title="Out of stock"<% } %>>
 
                     <% if (item.images && item.images.length > 0) { %>
                       <div class="item-icon">
@@ -98,17 +94,20 @@
 
                   </div><!-- /item-card -->
 
-                  <!-- Qty stepper (shown after selecting) -->
+                  <!-- Qty stepper -->
                   <div class="qty-row" id="qty-row-<%= item.name %>" style="display:none;">
-                    <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', -1)">−</button>
+                    <%-- ✅ data attributes instead of onclick --%>
+                    <button type="button" class="qty-btn"
+                            data-item-type="<%= item.name %>" data-delta="-1">−</button>
                     <span class="qty-val" id="qty-<%= item.name %>">1</span>
-                    <button type="button" class="qty-btn" onclick="changeQty('<%= item.name %>', 1)">+</button>
+                    <button type="button" class="qty-btn"
+                            data-item-type="<%= item.name %>" data-delta="1">+</button>
                   </div>
                   <div class="qty-label" id="qty-label-<%= item.name %>" style="display:none;">
                     of <%= item.availableQuantity %> available
                   </div>
 
-                  <!-- Hidden POST inputs (disabled until selected) -->
+                  <!-- Hidden POST inputs -->
                   <input type="hidden" name="items[<%= index %>][itemType]"
                          value="<%= item.name %>" id="itype-<%= item.name %>" disabled>
                   <input type="hidden" name="items[<%= index %>][quantity]"
@@ -117,7 +116,7 @@
                 </div>
               <% }); %>
 
-            </div><!-- /row g-3 -->
+            </div>
           </div>
         </div>
 
@@ -154,7 +153,7 @@
           </div>
         </div>
 
-        <!-- Step 4: Notes (optional) -->
+        <!-- Step 4: Notes -->
         <div class="jm-card">
           <div class="jm-card-body">
             <h5 class="font-display mb-3" style="color:var(--maroon);">
@@ -213,13 +212,13 @@
 
           </div>
         </div>
-      </div><!-- /col-lg-4 -->
+      </div>
 
-    </div><!-- /row -->
+    </div>
   </form>
 </div>
 
-<!-- ── Scoped Styles ─────────────────────────────────────────── -->
+<!-- ── Styles (move to your external CSS file to fully satisfy CSP) ── -->
 <style>
   .item-card {
     border: 2px solid var(--border, #e5e7eb);
@@ -247,15 +246,9 @@
     border-color: #d1d5db;
     pointer-events: none;
   }
-  .item-icon {
-    font-size: 28px;
-    color: var(--maroon, #7c1c2e);
-    margin-bottom: 6px;
-  }
+  .item-icon { font-size: 28px; color: var(--maroon, #7c1c2e); margin-bottom: 6px; }
   .item-name  { font-size: 13px; font-weight: 700; color: #1f2937; }
   .item-price { font-size: 11px; color: var(--text-muted, #6b7280); margin-top: 2px; }
-
-  /* Stock badge on card */
   .item-stock {
     display: inline-block;
     margin-top: 6px;
@@ -267,19 +260,8 @@
     border-radius: 20px;
     padding: 2px 8px;
   }
-  .item-stock.out {
-    color: #ef4444;
-    background: #fef2f2;
-    border-color: #fecaca;
-  }
-
-  .qty-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
-  }
+  .item-stock.out { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
+  .qty-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
   .qty-btn {
     width: 28px; height: 28px;
     border-radius: 50%;
@@ -287,37 +269,22 @@
     background: transparent;
     color: var(--maroon, #7c1c2e);
     font-size: 16px; font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
+    line-height: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background .15s, color .15s;
   }
   .qty-btn:hover { background: var(--maroon, #7c1c2e); color: #fff; }
   .qty-val { font-size: 15px; font-weight: 700; min-width: 24px; text-align: center; }
-
-  /* "of N available" label under stepper */
-  .qty-label {
-    text-align: center;
-    font-size: 10px;
-    color: var(--text-muted, #6b7280);
-    margin-top: 3px;
-  }
-
-  .cost-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    padding: 4px 0;
-    color: #374151;
-  }
+  .qty-label { text-align: center; font-size: 10px; color: var(--text-muted, #6b7280); margin-top: 3px; }
+  .cost-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #374151; }
   .font-mono { font-family: 'Courier New', monospace; }
 </style>
 
-<!-- ── Script ────────────────────────────────────────────────── -->
+<!-- ── Script — move to an external .js file to fully satisfy CSP ── -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-  // Populated from DB via EJS — zero hardcoded values
+  // ✅ All data comes from data-* attributes on the DOM — no inline JS anywhere
   const PRICES  = {};
   const NAMES   = {};
   const MAX_QTY = {};
@@ -330,8 +297,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const selected = new Map(); // itemName → pricePerDay
 
-  /* ── Toggle item selection ── */
-  window.toggleItem = function (type, price, maxQty) {
+  /* ── Item card click via event delegation ── */
+  document.querySelector('.row.g-3').addEventListener('click', function (e) {
+    const card = e.target.closest('.item-card');
+    if (!card || card.classList.contains('item-unavailable')) return;
+
+    const type   = card.dataset.itemType;
+    const price  = parseFloat(card.dataset.price);
+    const maxQty = parseInt(card.dataset.maxQty);
+    toggleItem(type, price, maxQty);
+  });
+
+  /* ── Qty stepper click via event delegation ── */
+  document.querySelector('.row.g-3').addEventListener('click', function (e) {
+    const btn = e.target.closest('.qty-btn');
+    if (!btn) return;
+
+    const type  = btn.dataset.itemType;
+    const delta = parseInt(btn.dataset.delta);
+    changeQty(type, delta);
+  });
+
+  /* ── Toggle selection ── */
+  function toggleItem(type, price, maxQty) {
     if (maxQty < 1) return;
 
     const card     = document.getElementById('card-'      + type);
@@ -341,7 +329,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const iqty     = document.getElementById('iqty-'      + type);
 
     if (selected.has(type)) {
-      // Deselect
       selected.delete(type);
       card.classList.remove('selected');
       qtyRow.style.display   = 'none';
@@ -351,7 +338,6 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('qty-' + type).textContent = '1';
       iqty.value = '1';
     } else {
-      // Select
       selected.set(type, price);
       card.classList.add('selected');
       qtyRow.style.display   = 'flex';
@@ -360,21 +346,21 @@ document.addEventListener('DOMContentLoaded', function () {
       iqty.disabled  = false;
     }
     computeCost();
-  };
+  }
 
-  /* ── Stepper: change quantity, capped at stock ── */
-  window.changeQty = function (type, delta) {
+  /* ── Change quantity ── */
+  function changeQty(type, delta) {
     const display   = document.getElementById('qty-'  + type);
     const hiddenQty = document.getElementById('iqty-' + type);
 
     let val = parseInt(display.textContent) + delta;
-    if (val < 1)              val = 1;
-    if (val > MAX_QTY[type])  val = MAX_QTY[type];
+    if (val < 1)             val = 1;
+    if (val > MAX_QTY[type]) val = MAX_QTY[type];
 
     display.textContent = val;
     hiddenQty.value     = val;
     computeCost();
-  };
+  }
 
   /* ── Recompute cost summary ── */
   function computeCost() {
@@ -393,11 +379,10 @@ document.addEventListener('DOMContentLoaded', function () {
       const qty = parseInt(document.getElementById('qty-' + type).textContent);
       const sub = qty * price * days;
       baseCost += sub;
-      itemLines += `
-        <div class="cost-row">
-          <span>${qty}× ${NAMES[type]} @ ₱${price.toLocaleString('en-PH')}/day × ${days}d</span>
-          <span class="font-mono">₱${sub.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-        </div>`;
+      itemLines += '<div class="cost-row">'
+        + '<span>' + qty + '× ' + NAMES[type] + ' @ ₱' + price.toLocaleString('en-PH') + '/day × ' + days + 'd</span>'
+        + '<span class="font-mono">₱' + sub.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</span>'
+        + '</div>';
     });
 
     document.getElementById('summaryItems').innerHTML =
@@ -420,9 +405,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   document.getElementById('endDate').addEventListener('change', computeCost);
 
-  /* ── Submit: disable all, re-enable only selected ── */
+  /* ── Submit ── */
   document.getElementById('rentalForm').addEventListener('submit', function (e) {
-
     Object.keys(PRICES).forEach(function (type) {
       const itype = document.getElementById('itype-' + type);
       const iqty  = document.getElementById('iqty-'  + type);
