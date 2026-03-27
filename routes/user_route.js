@@ -206,34 +206,84 @@ router.get('/rentals/:rentalId', isValidId('rentalId'), isRental, isRentalOwner,
 });
 
 // ── POST /user/rentals/:rentalId/cancel ───────────────────────────────────────
-router.post('/rentals/:rentalId/cancel', isValidId('rentalId'), isRental, isRentalOwner, isRentalPending, async (req, res) => {
+router.post('/rentals', async (req, res) => {
   try {
-    req.rental.status      = 'cancelled';
-    req.rental.cancelledAt = new Date();
-    req.rental.cancelledBy = req.currentUser._id;
-    await req.rental.save();
+    const { rentalStartDate, rentalEndDate, deliveryAddress, notes } = req.body;
 
-    // Notify customer
-    await Notification.create({
-      recipient:     req.currentUser._id,
-      type:          'RENTAL_CANCELLED',
-      title:         'Rental Cancelled',
-      message:       `Your rental ${req.rental.referenceNumber} has been cancelled.`,
-      relatedRental: req.rental._id,
+    // Kunin ang arrays mula sa form
+    const rawTypes = [].concat(req.body['itemType[]'] || []);
+    const rawQtys  = [].concat(req.body['quantity[]'] || []);
+    const rawPrices = [].concat(req.body['pricePerDay[]'] || []);
+
+    if (rawTypes.length === 0) {
+      req.flash('error', 'Please select at least one item.');
+      return res.redirect('/user/rentals/new');
+    }
+
+    const start = new Date(rentalStartDate);
+    const end   = new Date(rentalEndDate);
+    
+    // Calculate days (minimum 1)
+    const diffTime = Math.abs(end - start);
+    const numberOfDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    let baseCost = 0;
+    const rentalItems = [];
+
+    for (let i = 0; i < rawTypes.length; i++) {
+        const qty = parseInt(rawQtys[i]) || 1;
+        const price = parseFloat(rawPrices[i]) || 0;
+        const subtotal = qty * price * numberOfDays;
+        
+        baseCost += subtotal;
+        
+        // DITO ANG FIX: Ginawa nating 'item' ang key imbes na 'itemType'
+        // para tumugma sa Rental validation failed error mo kanina
+        rentalItems.push({
+          item: rawTypes[i], // Ito ang hinahanap ng Schema mo
+          quantity: qty,
+          pricePerDay: price,
+          subtotal: subtotal
+        });
+    }
+
+    const rental = new Rental({
+      customer: req.currentUser._id,
+      items: rentalItems,
+      rentalStartDate: start,
+      rentalEndDate: end,
+      numberOfDays: numberOfDays,
+      deliveryAddress: deliveryAddress || req.currentUser.location,
+      baseCost: baseCost,
+      totalCost: baseCost,
+      notes: notes || '',
+      status: 'pending',
+      paymentStatus: 'unpaid'
     });
 
-    await createAuditLog(req, {
-      action:      'RENTAL_CANCEL',
-      targetCollection: 'Rental',
-      targetId:    req.rental._id,
-      description: `Customer cancelled rental ${req.rental.referenceNumber}`,
-    });
+    await rental.save();
+    
+    // Audit Log & Notif (Optional - siguraduhin mong working ang functions na ito)
+    try {
+        const admins = await User.find({ role: { $in: ['admin','superadmin'] } }).lean();
+        const notifDocs = admins.map(a => ({
+          recipient: a._id,
+          type: 'RENTAL_SUBMITTED',
+          title: 'New Rental Request',
+          message: `${req.currentUser.fullName} submitted rental.`,
+          relatedRental: rental._id,
+        }));
+        await Notification.insertMany(notifDocs);
+    } catch (e) { console.log("Notification error bypassed"); }
 
-    req.flash('success', 'Rental cancelled successfully.');
-    res.redirect('/user/rentals');
+    req.flash('success', `Rental request submitted successfully!`);
+    res.redirect(`/user/rentals/${rental._id}`);
+
   } catch (err) {
-    req.flash('error', 'Could not cancel rental.');
-    res.redirect(`/user/rentals/${req.params.rentalId}`);
+    console.error('SERVER ERROR:', err);
+    // Mas detalyadong error para makita natin kung bakit ayaw ng Database
+    req.flash('error', err.message); 
+    res.redirect('/user/rentals/new');
   }
 });
 
