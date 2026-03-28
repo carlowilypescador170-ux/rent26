@@ -20,14 +20,14 @@ const flash      = require('connect-flash');
 const helmet     = require('helmet');
 const morgan     = require('morgan');
 
-const { attachUser }        = require('./middleware/isUser');
-const { attachUnreadCount } = require('./middleware/isNotification');
+const { attachUser }        = require('../middleware/isUser');
+const { attachUnreadCount } = require('../middleware/isNotification');
 
-const authRoutes         = require('./routes/auth');
-const userRoutes         = require('./routes/user');
-const adminRoutes        = require('./routes/admin');
-const superAdminRoutes   = require('./routes/superAdmin');
-const notificationRoutes = require('./routes/notification');
+const authRoutes         = require('./auth');
+const userRoutes         = require('./user_route');
+const adminRoutes        = require('./admin_route');
+const superAdminRoutes   = require('./superAdmin');
+const notificationRoutes = require('./notification_route');
 
 const app    = express();
 const PORT   = process.env.PORT || 3000;
