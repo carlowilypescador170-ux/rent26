@@ -5,9 +5,19 @@
 
 require('dotenv').config();
 
-const requiredEnv = ['MONGO_URI', 'SESSION_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+const requiredEnv = [
+  'MONGO_URI',
+  'SESSION_SECRET',
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET'
+];
+
 requiredEnv.forEach((key) => {
-  if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`) }
+  if (!process.env[key]) {
+    console.error(`[FATAL] Missing env: ${key}`);
+    process.exit(1); // 🔥 STOP SERVER PROPERLY
+  }
 });
 const cors = require('cors');
 const express    = require('express');
