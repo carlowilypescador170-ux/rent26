@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');
-const Rental = require('../models/rental');
-const Item = require('../models/item');
-const Notification = require('../models/notification');
-const { isUser } = require('../middleware/isUser');
-const { isRental, isRentalOwner, isRentalActive } = require('../middleware/isRental');
-const { isValidId } = require('../middleware/isValidId');
-const { uploadProfilePicture } = require('../middleware/isUpload');
-const { createAuditLog } = require('../middleware/isAuditLog');
+const User = require('./models/user');
+const Rental = require('./models/rental');
+const Item = require('./models/item');
+const Notification = require('./models/notification');
+const { isUser } = require('./middleware/isUser');
+const { isRental, isRentalOwner, isRentalActive } = require('./middleware/isRental');
+const { isValidId } = require('./middleware/isValidId');
+const { uploadProfilePicture } = require('./middleware/isUpload');
+const { createAuditLog } = require('./middleware/isAuditLog');
 
 // Middleware to ensure user is logged in
 router.use(isUser);
