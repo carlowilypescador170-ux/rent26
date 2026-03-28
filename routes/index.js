@@ -36,7 +36,7 @@ app.use(cors());
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('[DB] MongoDB connected successfully'))
-  .catch((err) => { console.error('[DB] Error:', err.message); process.exit(1); });
+  .catch((err) => { console.error('[DB] Error:', err.message) });
 
 mongoose.connection.on('disconnected', () => console.warn('[DB] MongoDB disconnected'));
 
