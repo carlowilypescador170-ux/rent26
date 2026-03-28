@@ -15,6 +15,7 @@ const express  = require('express');
 const path     = require('path');
 const mongoose = require('mongoose');
 const ejsMate  = require('ejs-mate');
+const session  = require('express-session');
 const flash    = require('connect-flash');
 const helmet   = require('helmet');
 const morgan   = require('morgan');
@@ -68,6 +69,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── SESSION — simple memory store, no connect-mongo needed ───────────────────
+app.use(session({
+  secret:            process.env.SESSION_SECRET || 'jmr-fallback-secret',
+  resave:            false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure:   isProd,
+    sameSite: 'lax',
+    maxAge:   1000 * 60 * 60 * 24 * 7, // 7 days
+  },
+  name: 'jmr.sid',
+}));
+
 // ── FLASH & LOCALS ────────────────────────────────────────────────────────────
 app.use(flash());
 app.use(attachUser);
@@ -78,7 +93,7 @@ app.use((req, res, next) => {
   res.locals.error       = req.flash('error');
   res.locals.info        = req.flash('info');
   res.locals.appName     = 'J&M Rentals';
-  res.locals.currentPath = req.path;
+  res.locals.currentPath = req.path;  // ✅ this fixes "currentPath is not defined"
   next();
 });
 
