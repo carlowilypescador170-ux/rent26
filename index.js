@@ -1,25 +1,23 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// index.js  —  J&M Rentals — Main Server (fully wired)
+// index.js  —  J&M Rentals — Main Server
 // ─────────────────────────────────────────────────────────────────────────────
 'use strict';
 
 require('dotenv').config();
 
-const requiredEnv = ['MONGO_URI', 'SESSION_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+const requiredEnv = ['MONGO_URI', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
 requiredEnv.forEach((key) => {
   if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`) }
 });
 
-const cors = require('cors');
-const express    = require('express');
-const path       = require('path');
-const mongoose   = require('mongoose');
-const ejsMate    = require('ejs-mate');
-const session    = require('express-session');
-const { MongoStore } = require('connect-mongo');
-const flash      = require('connect-flash');
-const helmet     = require('helmet');
-const morgan     = require('morgan');
+const cors     = require('cors');
+const express  = require('express');
+const path     = require('path');
+const mongoose = require('mongoose');
+const ejsMate  = require('ejs-mate');
+const flash    = require('connect-flash');
+const helmet   = require('helmet');
+const morgan   = require('morgan');
 
 const { attachUser }        = require('./middleware/isUser');
 const { attachUnreadCount } = require('./middleware/isNotification');
@@ -33,7 +31,10 @@ const notificationRoutes = require('./routes/notification_route');
 const app    = express();
 const PORT   = process.env.PORT || 10000;
 const isProd = process.env.NODE_ENV === 'production';
+
 app.use(cors());
+
+// ── DATABASE ──────────────────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('[DB] MongoDB connected successfully'))
@@ -41,10 +42,12 @@ mongoose
 
 mongoose.connection.on('disconnected', () => console.warn('[DB] MongoDB disconnected'));
 
+// ── VIEW ENGINE ───────────────────────────────────────────────────────────────
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// ── SECURITY ──────────────────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -59,26 +62,13 @@ app.use(helmet({
   frameguard: { action: 'sameorigin' },
 }));
 
+// ── LOGGING & PARSING ─────────────────────────────────────────────────────────
 app.use(morgan(isProd ? 'combined' : 'dev'));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(session({
-  secret:            process.env.SESSION_SECRET,
-  resave:            false,
-  saveUninitialized: false,
-  store: new MongoStore({
-    mongoUrl:       process.env.MONGO_URI,
-    dbName:         'rental26',
-    collectionName: 'sessions',
-    ttl:            60 * 60 * 24 * 7,
-    autoRemove:     'native',
-  }),
-  cookie: { httpOnly: true, secure: isProd, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 },
-  name: 'jmr.sid',
-}));
-
+// ── FLASH & LOCALS ────────────────────────────────────────────────────────────
 app.use(flash());
 app.use(attachUser);
 app.use(attachUnreadCount);
@@ -127,6 +117,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).render('error', { statusCode, message });
 });
 
+// ── START SERVER ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log('');
   console.log('╔══════════════════════════════════════╗');
@@ -137,3 +128,4 @@ app.listen(PORT, () => {
   console.log('');
 });
 
+module.exports = app;
