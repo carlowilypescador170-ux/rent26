@@ -2,10 +2,10 @@
   "name": "rental26",
   "version": "1.0.0",
   "description": "",
-  "main": "./routes/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node ./routes/index.js",
-    "dev": "nodemon ./routes/index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
