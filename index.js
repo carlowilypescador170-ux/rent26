@@ -10,6 +10,7 @@ const { isValidId } = require('./middleware/isValidId');
 const { uploadProfilePicture } = require('./middleware/isUpload');
 const { createAuditLog } = require('./middleware/isAuditLog');
 
+
 // Middleware to ensure user is logged in
 router.use(isUser);
 
