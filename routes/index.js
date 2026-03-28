@@ -9,6 +9,8 @@ const requiredEnv = ['MONGO_URI', 'SESSION_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CL
 requiredEnv.forEach((key) => {
   if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`); process.exit(1); }
 });
+const dns = require('node:dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 const cors = require('cors');
 const express    = require('express');
 const path       = require('path');
