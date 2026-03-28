@@ -176,7 +176,7 @@
         <h5 class="modal-title font-display">Reject Rental</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/admin/rentals/<%= rental._id %>/reject" method="GET">
+      <form action="/admin/rentals/<% rental._id %>/reject" method="GET">
         <div class="modal-body p-4">
           <label class="form-label">Reason <span class="text-danger">*</span></label>
           <textarea name="rejectionReason" class="form-control" rows="3" required placeholder="Reason for rejection..."></textarea>
