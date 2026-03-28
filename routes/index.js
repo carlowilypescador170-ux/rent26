@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const requiredEnv = ['MONGO_URI', 'SESSION_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
 requiredEnv.forEach((key) => {
-  if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`); process.exit(1); }
+  if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`) }
 });
 const dns = require('node:dns');
 dns.setServers(['8.8.8.8', '1.1.1.1']);

@@ -16,7 +16,7 @@ const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
   console.error('[FATAL] Missing MONGO_URI in .env file.');
-  process.exit(1);
+  
 }
 
 // ─── Dummy Data matching userSchema ──────────────────────────────────────────
@@ -91,7 +91,7 @@ const seedDatabase = async () => {
   } finally {
     console.log('[SEED] Closing database connection...');
     await mongoose.connection.close();
-    process.exit(0);
+    
   }
 };
 
