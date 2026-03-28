@@ -5,10 +5,11 @@
 
 require('dotenv').config();
 
-const requiredEnv = ['MONGO_URI' , 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+const requiredEnv = ['MONGO_URI', 'SESSION_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
 requiredEnv.forEach((key) => {
   if (!process.env[key]) { console.error(`[FATAL] Missing env: ${key}`) }
 });
+
 const cors = require('cors');
 const express    = require('express');
 const path       = require('path');
@@ -30,7 +31,7 @@ const superAdminRoutes   = require('./superAdmin');
 const notificationRoutes = require('./notification_route');
 
 const app    = express();
-const PORT   = process.env.PORT || 3000;
+const PORT   = process.env.PORT || 10000;
 const isProd = process.env.NODE_ENV === 'production';
 app.use(cors());
 mongoose
@@ -63,20 +64,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use(session({
-//   secret:            process.env.SESSION_SECRET,
-//   resave:            false,
-//   saveUninitialized: false,
-//   store: new MongoStore({
-//     mongoUrl:       process.env.MONGO_URI,
-//     dbName:         'rental26',
-//     collectionName: 'sessions',
-//     ttl:            60 * 60 * 24 * 7,
-//     autoRemove:     'native',
-//   }),
-//   cookie: { httpOnly: true, secure: isProd, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 },
-//   name: 'jmr.sid',
-// }));
+app.use(session({
+  secret:            process.env.SESSION_SECRET,
+  resave:            false,
+  saveUninitialized: false,
+  store: new MongoStore({
+    mongoUrl:       process.env.MONGO_URI,
+    dbName:         'rental26',
+    collectionName: 'sessions',
+    ttl:            60 * 60 * 24 * 7,
+    autoRemove:     'native',
+  }),
+  cookie: { httpOnly: true, secure: isProd, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 7 },
+  name: 'jmr.sid',
+}));
 
 app.use(flash());
 app.use(attachUser);
