@@ -89,7 +89,7 @@
 
                     <div class="qty-input-group" id="qty-box-<%= item.name %>" style="display: none;" onclick="event.stopPropagation()">
                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', -1)">-</button>
-                      <span id="qty-num-<%= item.name %>" class="fw-bold mx-2">1</span>
+                      <input name="quantity" id="qty-num-<%= item.name %>" class="fw-bold mx-2">1</input>
                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', 1)">+</button>
                     </div>
                   </div>
@@ -147,7 +147,7 @@
             <span id="displayTotal" class="fs-5 fw-bold" style="color: var(--maroon);">₱0.00</span>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 shadow-sm" disabled>
+          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 shadow-sm" >
             Confirm Rental Request
           </button>
           
