@@ -13,57 +13,6 @@ const { createAuditLog } = require('../middleware/isAuditLog');
 
 // Middleware to ensure user is logged in
 router.use(isUser);
-router.post('/rentals', async (req, res) => {
-    try {
-        const { rentalStartDate, rentalEndDate, deliveryAddress } = req.body;
-
-        // 1. CATCH THE ARRAYS FROM YOUR EJS
-        // We use [].concat to handle cases with only 1 item
-        const itemNames = [].concat(req.body['itemType[]'] || []);
-        const quantities = [].concat(req.body['quantity[]'] || []);
-        const prices = [].concat(req.body['pricePerDay[]'] || []);
-
-        // 2. CHECK IF EMPTY
-        if (itemNames.length === 0) {
-            req.flash('error', 'Please select at least one item.');
-            return res.redirect('/user/rentals/new');
-        }
-
-        const start = new Date(rentalStartDate);
-        const end = new Date(rentalEndDate);
-        const numberOfDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-        // 3. COMBINE THEM INTO OBJECTS FOR THE DATABASE
-        const rentalItems = itemNames.map((name, i) => ({
-            item: name, 
-            quantity: parseInt(quantities[i]),
-            pricePerDay: parseFloat(prices[i]),
-            subtotal: parseInt(quantities[i]) * parseFloat(prices[i]) * numberOfDays
-        }));
-
-        const rental = new Rental({
-            customer: req.currentUser._id,
-            items: rentalItems,
-            rentalStartDate: start,
-            rentalEndDate: end,
-            numberOfDays,
-            deliveryAddress,
-            totalCost: rentalItems.reduce((acc, curr) => acc + curr.subtotal, 0),
-            status: 'pending'
-        });
-
-        await rental.save();
-        req.flash('success', 'Rental submitted!');
-        
-        // Redirect to the list or detail page
-        res.redirect('/user/rentals'); 
-
-    } catch (err) {
-        console.error("ERROR:", err);
-        req.flash('error', err.message);
-        res.redirect('/user/rentals/new');
-    }
-});
 
 router.get('/dashboard', async (req, res) => {
   try {
@@ -136,13 +85,13 @@ router.get('/rentals/new', async (req, res) => {
 // ── POST CREATE RENTAL ──
 router.post('/rentals', async (req, res) => {
   try {
+    console.log('BODY:', JSON.stringify(req.body));
     const { rentalStartDate, rentalEndDate, deliveryAddress, notes } = req.body;
 
     // Correctly handle arrays from checkboxes
-    const rawTypes = [].concat(req.body['itemType[]'] || []);
-    const rawQtys = [].concat(req.body['quantity[]'] || []);
-    const rawPrices = [].concat(req.body['pricePerDay[]'] || []);
-
+ const rawTypes  = [].concat(req.body['itemType']   || []);
+const rawQtys   = [].concat(req.body['quantity']   || []);
+const rawPrices = [].concat(req.body['pricePerDay'] || []);
     if (rawTypes.length === 0) {
       req.flash('error', 'Please select at least one item.');
       return res.redirect('/user/rentals/new');
@@ -161,22 +110,29 @@ router.post('/rentals', async (req, res) => {
     let baseCost = 0;
     const rentalItems = [];
 
-    for (let i = 0; i < rawTypes.length; i++) {
-        const qty = parseInt(rawQtys[i]) || 1;
-        const price = parseFloat(rawPrices[i]) || 0;
-        const subtotal = qty * price * numberOfDays;
-        
-        baseCost += subtotal;
-        
-        // FIX: Using 'item' key to match your Mongoose Schema validation
-        rentalItems.push({
-          item: rawTypes[i], 
-          quantity: qty,
-          pricePerDay: price,
-          subtotal: subtotal
-        });
-    }
+   // Replace your current for loop with this:
+for (let i = 0; i < rawTypes.length; i++) {
+  const qty = parseInt(rawQtys[i]) || 1;
+  const price = parseFloat(rawPrices[i]) || 0;
 
+  // ✅ Look up the actual Item by name to get its _id
+  const foundItem = await Item.findOne({ name: rawTypes[i] }).lean();
+  if (!foundItem) {
+    req.flash('error', `Item "${rawTypes[i]}" not found.`);
+    return res.redirect('/user/rentals/new');
+  }
+
+  const subtotal = qty * price * numberOfDays;
+  baseCost += subtotal;
+
+  rentalItems.push({
+    item:       foundItem._id,  // ✅ ObjectId, not string
+    itemType:   foundItem.name, // ✅ satisfies required itemType field
+    quantity:   qty,
+    pricePerDay: price,
+    subtotal:   subtotal
+  });
+}
     const rental = new Rental({
       customer: req.currentUser._id,
       items: rentalItems,

@@ -89,7 +89,7 @@
 
                     <div class="qty-input-group" id="qty-box-<%= item.name %>" style="display: none;" onclick="event.stopPropagation()">
                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', -1)">-</button>
-                      <input name="quantity" id="qty-num-<%= item.name %>" class="fw-bold mx-2">1</input>
+                      <span id="qty-num-<%= item.name %>" class="fw-bold mx-2">1</span>
                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateQty('<%= item.name %>', 1)">+</button>
                     </div>
                   </div>
@@ -147,7 +147,7 @@
             <span id="displayTotal" class="fs-5 fw-bold" style="color: var(--maroon);">₱0.00</span>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 shadow-sm" >
+          <button type="submit" id="submitBtn" class="btn btn-maroon w-100 shadow-sm" disabled>
             Confirm Rental Request
           </button>
           
@@ -162,7 +162,7 @@
   // Map to store selected items: { "chair": { displayName, price, qty, max } }
   let selected = new Map();
 
-  function selectItem(name, displayName, price, max) {
+  const selectItem = (name, displayName, price, max)=> {
     if (max <= 0) return; // Ignore if no stock
 
     const card = document.getElementById(`card-${name}`);
@@ -238,38 +238,26 @@
   }
 
   
-  // INTERCEPT FORM SUBMISSION (NEW FLAT ARRAY VERSION)
-document.getElementById('rentalForm').onsubmit = function(e) {
-    if (selected.size === 0) {
-        alert("Please select at least one item before submitting.");
-        return false;
-    }
+ // Replace the entire onsubmit with this:
+document.getElementById('rentalForm').addEventListener('submit', function(e) {
+  e.preventDefault();
 
-    const payloadContainer = document.getElementById('formPayload');
-    payloadContainer.innerHTML = ''; // Reset
-    
-    selected.forEach((data, name) => {
-        // 1. Hidden input for Item Name (name="itemType[]")
-        const typeInput = document.createElement('input');
-        typeInput.type = 'hidden';
-        typeInput.name = 'itemType[]'; // FLAT ARRAY
-        typeInput.value = name;
-        payloadContainer.appendChild(typeInput);
+  if (selected.size === 0) {
+    alert("Please select at least one item before submitting.");
+    return;
+  }
 
-        // 2. Hidden input for Quantity (name="quantity[]")
-        const qtyInput = document.createElement('input');
-        qtyInput.type = 'hidden';
-        qtyInput.name = 'quantity[]'; // FLAT ARRAY
-        qtyInput.value = data.qty;
-        payloadContainer.appendChild(qtyInput);
+  const payloadContainer = document.getElementById('formPayload');
+  payloadContainer.innerHTML = '';
 
-        // 3. Hidden input for Price (name="pricePerDay[]")
-        const priceInput = document.createElement('input');
-        priceInput.type = 'hidden';
-        priceInput.name = 'pricePerDay[]'; // FLAT ARRAY
-        priceInput.value = data.price;
-        payloadContainer.appendChild(priceInput);
-    });
+  selected.forEach((data, name) => {
+    payloadContainer.innerHTML += `
+      <input type="hidden" name="itemType[]" value="${name}">
+      <input type="hidden" name="quantity[]" value="${data.qty}">
+      <input type="hidden" name="pricePerDay[]" value="${data.price}">
+    `;
+  });
 
-    return true; // Proceed to server
-};
+  this.submit(); // bypass onsubmit to avoid loop
+});
+</script>

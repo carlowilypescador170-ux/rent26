@@ -51,17 +51,19 @@ app.set('views', path.join(__dirname, 'views'));
 // ── SECURITY ──────────────────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
-      styleSrc:   ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
-      fontSrc:    ["'self'", 'fonts.gstatic.com'],
-      imgSrc:     ["'self'", 'data:', 'res.cloudinary.com'],
-      connectSrc: ["'self'"],
-    },
+   directives: {
+  defaultSrc:    ["'self'"],
+  scriptSrc:     ["'self'", "'unsafe-inline'", "'unsafe-hashes'", 'cdn.jsdelivr.net', 'cdnjs.cloudflare.com'],
+  scriptSrcAttr: ["'unsafe-inline'"],
+  styleSrc:      ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
+  fontSrc:       ["'self'", 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'data:'],
+  imgSrc:        ["'self'", 'data:', 'res.cloudinary.com'],
+  connectSrc:    ["'self'", 'cdn.jsdelivr.net'],
+},
   },
   frameguard: { action: 'sameorigin' },
 }));
+
 
 // ── LOGGING & PARSING ─────────────────────────────────────────────────────────
 app.use(morgan(isProd ? 'combined' : 'dev'));

@@ -219,7 +219,6 @@ rentalSchema.pre('save', async function (next) {
   // Auto-compute totalCost
   this.totalCost = this.baseCost + (this.extensionCost || 0);
 
-  next();
 });
 
 module.exports = mongoose.model('Rental', rentalSchema);
